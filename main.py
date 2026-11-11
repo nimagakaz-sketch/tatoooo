@@ -18,11 +18,15 @@ dp = Dispatcher()
 os.makedirs("static/uploads", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    with open("index.html", "r", encoding="utf-8") as f:
+    index_path = os.path.join(BASE_DIR, "index.html")
+    with open(index_path, "r", encoding="utf-8") as f:
         return f.read()
-
 @app.post("/submit")
 async def submit_appointment(
     request: Request,

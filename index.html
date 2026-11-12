@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tattoo Studio | Liquid Glass</title>
+    <title id="pageTitle">Tattoo Studio | Liquid Glass</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -20,10 +20,6 @@
 
         body {
             background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 42, 54, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(80, 20, 30, 0.2) 0%, transparent 50%),
-                url('https://images.unsplash.com/photo-1544457070-4cd773b4d71e?q=80&w=1000&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -31,6 +27,7 @@
             padding: 16px;
             min-height: 100vh;
             overflow-x: hidden;
+            transition: background-image 0.5s ease;
         }
 
         .container { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 50px; }
@@ -43,7 +40,6 @@
             display: flex;
             background: rgba(20, 20, 25, 0.6);
             backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
             border-radius: 16px;
             padding: 6px;
             margin-bottom: 20px;
@@ -64,7 +60,6 @@
             cursor: pointer;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .tab-btn.active {
@@ -89,7 +84,6 @@
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
             border: 1px solid var(--glass-border);
             border-radius: 20px;
             padding: 22px;
@@ -98,7 +92,7 @@
         }
 
         .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 11px; font-weight: 700; color: var(--hint-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: var(--hint-color); margin-bottom: 8px; text-transform: uppercase; }
 
         input, textarea, select {
             width: 100%; padding: 14px 16px;
@@ -107,55 +101,28 @@
             border-radius: 14px; color: var(--text-color);
             font-size: 15px; outline: none; transition: all 0.3s;
         }
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--accent-red);
-            box-shadow: 0 0 0 4px rgba(255, 42, 54, 0.2);
-        }
+        input:focus, textarea:focus { border-color: var(--accent-red); box-shadow: 0 0 0 4px rgba(255, 42, 54, 0.2); }
 
         .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            padding-right: 4px;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+            max-height: 200px; overflow-y: auto; margin-bottom: 15px; padding-right: 4px;
         }
 
         .slot-item {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
+            border-radius: 12px; padding: 10px; text-align: center;
+            cursor: pointer; transition: all 0.2s; font-size: 13px;
         }
-        .slot-item.booked {
-            background: rgba(255, 255, 255, 0.01);
-            color: #555;
-            border-color: rgba(255, 255, 255, 0.02);
-            cursor: not-allowed;
-            text-decoration: line-through;
-        }
-        .slot-item.selected {
-            background: var(--accent-red);
-            border-color: var(--accent-red);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(255, 42, 54, 0.4);
-            font-weight: bold;
-        }
+        .slot-item.booked { background: rgba(255, 255, 255, 0.01); color: #555; border-color: rgba(255, 255, 255, 0.02); cursor: not-allowed; text-decoration: line-through; }
+        .slot-item.selected { background: var(--accent-red); border-color: var(--accent-red); color: #fff; box-shadow: 0 4px 15px rgba(255, 42, 54, 0.4); font-weight: bold; }
 
         .file-upload-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px dashed rgba(255, 255, 255, 0.15);
-            border-radius: 14px; color: var(--text-color); font-size: 14px; cursor: pointer;
-            transition: all 0.3s;
+            width: 100%; padding: 14px; background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 14px;
+            color: var(--text-color); font-size: 14px; cursor: pointer; transition: all 0.3s;
         }
-        .file-upload-btn:hover { background: rgba(255, 255, 255, 0.07); border-color: var(--accent-red); }
         input[type="file"] { display: none; }
         .file-name { font-size: 12px; color: var(--hint-color); margin-top: 6px; text-align: center; }
 
@@ -165,9 +132,7 @@
             color: #fff; border: none; border-radius: 14px;
             font-size: 15px; font-weight: 700; cursor: pointer;
             box-shadow: 0 6px 25px rgba(255, 42, 54, 0.4); text-transform: uppercase;
-            letter-spacing: 0.5px; transition: transform 0.2s;
         }
-        .submit-btn:active { transform: scale(0.98); }
 
         .grid-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .gallery-item { border-radius: 14px; overflow: hidden; height: 160px; background: #15151a; border: 1px solid var(--glass-border); }
@@ -177,14 +142,34 @@
         .review-author { font-weight: 700; font-size: 13px; color: var(--accent-red); margin-bottom: 4px; }
         .review-text { font-size: 13px; color: #ddd; }
 
-        .admin-section { margin-top: 20px; border-top: 1px dashed var(--glass-border); padding-top: 15px; }
-        .admin-title { font-size: 11px; font-weight: 700; color: var(--accent-red); margin-bottom: 10px; text-transform: uppercase; }
+        .admin-trigger-btn {
+            display: none; width: 100%; margin-top: 30px; padding: 12px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
+            border-radius: 14px; color: var(--hint-color); font-size: 12px; font-weight: 600;
+            cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .admin-trigger-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px);
+            z-index: 1000; justify-content: center; align-items: center; padding: 16px;
+        }
+        .modal.open { display: flex; }
+        .modal-card {
+            background: #121216; border: 1px solid var(--glass-border); border-radius: 20px;
+            width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; padding: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-title { font-size: 14px; font-weight: 700; color: var(--accent-red); text-transform: uppercase; }
+        .close-modal { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Tattoo Studio</h1>
+            <h1 id="studioTitleHeader">Tattoo Studio</h1>
             <p>Liquid Glass Experience</p>
         </div>
 
@@ -194,6 +179,7 @@
             <button class="tab-btn" onclick="switchTab('reviews', this)">Отзывы</button>
         </div>
 
+        <!-- ВКЛАДКА 1: ЗАПИСЬ -->
         <div id="booking" class="tab-content active">
             <div class="glass-card">
                 <form id="bookingForm" onsubmit="submitForm(event)">
@@ -201,18 +187,15 @@
                         <label>Ваше имя</label>
                         <input type="text" name="client_name" placeholder="Как к вам обращаться?" required>
                     </div>
-
                     <div class="form-group">
                         <label>Выберите свободное время сеанса</label>
                         <div class="slots-grid" id="slotsContainer"></div>
                         <input type="hidden" name="slot_id" id="selectedSlotId" required>
                     </div>
-
                     <div class="form-group">
                         <label>Размер и место татуировки</label>
                         <input type="text" name="tattoo_size" placeholder="Например: 15х10 см, предплечье" required>
                     </div>
-
                     <div class="form-group">
                         <label>Эскиз или референс</label>
                         <label class="file-upload-btn">
@@ -221,42 +204,68 @@
                         </label>
                         <div class="file-name" id="fileName">Файл не выбран</div>
                     </div>
-
                     <input type="hidden" name="telegram_id" id="telegram_id">
                     <button type="submit" class="submit-btn">Забронировать сеанс</button>
                 </form>
             </div>
         </div>
 
+        <!-- ВКЛАДКА 2: РАБОТЫ -->
         <div id="works" class="tab-content">
             <div class="glass-card">
-                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Портфолио</h3>
+                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">Портфолио</h3>
                 <div class="grid-gallery" id="worksContainer"></div>
-
-                <div class="admin-section">
-                    <div class="admin-title">Панель мастера: загрузка работы</div>
-                    <input type="file" id="adminWorkFile" accept="image/*" style="margin-bottom: 8px; font-size: 12px;">
-                    <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px;" onclick="uploadWork()">Загрузить в портфолио</button>
-                </div>
             </div>
         </div>
 
+        <!-- ВКЛАДКА 3: ОТЗЫВЫ -->
         <div id="reviews" class="tab-content">
             <div class="glass-card">
-                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Отзывы клиентов</h3>
+                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">Отзывы клиентов</h3>
                 <div id="reviewsContainer"></div>
+            </div>
+        </div>
 
-                <div class="admin-section">
-                    <div class="admin-title">Панель мастера: добавить слот расписания</div>
-                    <input type="date" id="newSlotDate" style="margin-bottom: 8px;">
-                    <input type="time" id="newSlotTime" style="margin-bottom: 8px;">
-                    <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 15px;" onclick="addSlot()">Создать слот</button>
+        <!-- Кнопка админки (скрыта для всех, кроме мастера) -->
+        <button class="admin-trigger-btn" id="adminTriggerBtn" onclick="openAdminModal()">⚙️ Панель мастера</button>
+    </div>
 
-                    <div class="admin-title">Панель мастера: добавить отзыв</div>
-                    <input type="text" id="reviewAuthor" placeholder="Имя клиента" style="margin-bottom: 8px;">
-                    <textarea id="reviewText" placeholder="Текст отзыва..." rows="2" style="margin-bottom: 8px;"></textarea>
-                    <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px;" onclick="addReview()">Опубликовать отзыв</button>
-                </div>
+    <!-- МОДАЛЬНОЕ ОКНО ПАНЕЛИ МАСТЕРА -->
+    <div class="modal" id="adminModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">Панель управления мастера</div>
+                <button class="close-modal" onclick="closeAdminModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Название студии</label>
+                <input type="text" id="settingStudioName" placeholder="Tattoo Studio">
+            </div>
+            <div class="form-group">
+                <label>Ссылка на фоновое изображение</label>
+                <input type="text" id="settingBgUrl" placeholder="https://...">
+            </div>
+            <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="saveSettings()">Сохранить настройки</button>
+
+            <div class="form-group">
+                <label>Добавить свободный слот</label>
+                <input type="date" id="newSlotDate" style="margin-bottom: 8px;">
+                <input type="time" id="newSlotTime" style="margin-bottom: 8px;">
+                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="addSlot()">Создать слот</button>
+            </div>
+
+            <div class="form-group">
+                <label>Загрузить работу в портфолио</label>
+                <input type="file" id="adminWorkFile" accept="image/*" style="margin-bottom: 8px; font-size: 12px; display: block;">
+                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="uploadWork()">Загрузить работу</button>
+            </div>
+
+            <div class="form-group">
+                <label>Добавить отзыв</label>
+                <input type="text" id="reviewAuthor" placeholder="Имя клиента" style="margin-bottom: 8px;">
+                <textarea id="reviewText" placeholder="Текст отзыва..." rows="2" style="margin-bottom: 8px;"></textarea>
+                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px;" onclick="addReview()">Опубликовать отзыв</button>
             </div>
         </div>
     </div>
@@ -268,7 +277,14 @@
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
             document.getElementById('telegram_id').value = user.username ? `@${user.username}` : `${user.first_name} (ID: ${user.id})`;
+            
+            // Проверка на мастера (@youngyannniii)
+            if (user.username && user.username.toLowerCase() === 'youngyannniii') {
+                document.getElementById('adminTriggerBtn').style.display = 'block';
+            }
         } else {
+            // Если запущено вне телеграма (для теста в браузере) — показываем кнопку
+            document.getElementById('adminTriggerBtn').style.display = 'block';
             document.getElementById('telegram_id').value = "@youngyannniii";
         }
 
@@ -279,9 +295,24 @@
             btn.classList.add('active');
         }
 
+        function openAdminModal() { document.getElementById('adminModal').classList.add('open'); }
+        function closeAdminModal() { document.getElementById('adminModal').classList.remove('open'); }
+
         async function loadData() {
             const res = await fetch('/api/data');
             const data = await res.json();
+
+            if(data.settings) {
+                const sName = data.settings.studio_name || "Tattoo Studio";
+                const bgUrl = data.settings.bg_url || "";
+                document.getElementById('studioTitleHeader').textContent = sName;
+                document.getElementById('pageTitle').textContent = sName;
+                document.getElementById('settingStudioName').value = sName;
+                document.getElementById('settingBgUrl').value = bgUrl;
+                if(bgUrl) {
+                    document.body.style.backgroundImage = `linear-gradient(rgba(8, 8, 10, 0.85), rgba(8, 8, 10, 0.85)), url('${bgUrl}')`;
+                }
+            }
 
             const slotsContainer = document.getElementById('slotsContainer');
             slotsContainer.innerHTML = '';
@@ -295,8 +326,6 @@
                         div.classList.add('selected');
                         document.getElementById('selectedSlotId').value = slot.id;
                     };
-                } else {
-                    div.title = "Занято";
                 }
                 slotsContainer.appendChild(div);
             });
@@ -320,6 +349,19 @@
             });
         }
 
+        async function saveSettings() {
+            const studio_name = document.getElementById('settingStudioName').value;
+            const bg_url = document.getElementById('settingBgUrl').value;
+            
+            const formData = new FormData();
+            formData.append('studio_name', studio_name);
+            formData.append('bg_url', bg_url);
+
+            await fetch('/api/admin/update_settings', { method: 'POST', body: formData });
+            loadData();
+            alert("Настройки успешно обновлены!");
+        }
+
         async function submitForm(event) {
             event.preventDefault();
             const form = document.getElementById('bookingForm');
@@ -331,11 +373,7 @@
                 return;
             }
 
-            const response = await fetch('/submit', {
-                method: 'POST',
-                body: formData
-            });
-
+            const response = await fetch('/submit', { method: 'POST', body: formData });
             if (response.ok) {
                 alert("Заявка успешно отправлена! Мастер скоро свяжется с вами.");
                 window.location.reload();

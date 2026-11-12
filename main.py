@@ -43,6 +43,22 @@ def init_db():
             text TEXT
         )
     """)
+  # Таблица для настроек студии (название и фон)
+  cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+    """)
+  # Установим дефолтные значения, если их нет
+  cursor.execute(
+      "INSERT OR IGNORE INTO settings (key, value) VALUES ('studio_name',"
+      " 'Tattoo Studio')"
+  )
+  cursor.execute(
+      "INSERT OR IGNORE INTO settings (key, value) VALUES ('bg_url',"
+      " 'https://images.unsplash.com/photo-1544457070-4cd773b4d71e?q=80&w=1000&auto=format&fit=crop')"
+  )
   conn.commit()
   conn.close()
 
@@ -77,8 +93,16 @@ async def get_data():
   cursor.execute("SELECT id, author, text FROM reviews")
   reviews = [{"id": r[0], "author": r[1], "text": r[2]} for r in cursor.fetchall()]
 
+  cursor.execute("SELECT key, value FROM settings")
+  settings = {row[0]: row[1] for row in cursor.fetchall()}
+
   conn.close()
-  return JSONResponse({"slots": slots, "works": works, "reviews": reviews})
+  return JSONResponse({
+      "slots": slots,
+      "works": works,
+      "reviews": reviews,
+      "settings": settings,
+  })
 
 
 @app.post("/api/admin/add_slot")
@@ -114,6 +138,23 @@ async def add_review(author: str = Form(...), text: str = Form(...)):
   cursor = conn.cursor()
   cursor.execute(
       "INSERT INTO reviews (author, text) VALUES (?, ?)", (author, text)
+  )
+  conn.commit()
+  conn.close()
+  return {"status": "success"}
+
+
+@app.post("/api/admin/update_settings")
+async def update_settings(studio_name: str = Form(...), bg_url: str = Form(...)):
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('studio_name', ?)",
+      (studio_name,),
+  )
+  cursor.execute(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('bg_url', ?)",
+      (bg_url,),
   )
   conn.commit()
   conn.close()

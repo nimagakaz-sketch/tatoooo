@@ -36,21 +36,21 @@ def init_db():
             image_url TEXT
         )
     """)
+  # Таблица отзывов (теперь с поддержкой фото)
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             author TEXT,
-            text TEXT
+            text TEXT,
+            photo_url TEXT
         )
     """)
-  # Таблица для настроек студии (название и фон)
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
         )
     """)
-  # Установим дефолтные значения, если их нет
   cursor.execute(
       "INSERT OR IGNORE INTO settings (key, value) VALUES ('studio_name',"
       " 'Tattoo Studio')"
@@ -90,8 +90,13 @@ async def get_data():
   cursor.execute("SELECT id, image_url FROM works")
   works = [{"id": r[0], "url": r[1]} for r in cursor.fetchall()]
 
-  cursor.execute("SELECT id, author, text FROM reviews")
-  reviews = [{"id": r[0], "author": r[1], "text": r[2]} for r in cursor.fetchall()]
+  cursor.execute("SELECT id, author, text, photo_url FROM reviews")
+  reviews = [{
+      "id": r[0],
+      "author": r[1],
+      "text": r[2],
+      "photo_url": r[3],
+  } for r in cursor.fetchall()]
 
   cursor.execute("SELECT key, value FROM settings")
   settings = {row[0]: row[1] for row in cursor.fetchall()}
@@ -132,12 +137,26 @@ async def add_work(file: UploadFile = File(...)):
   return {"status": "success"}
 
 
-@app.post("/api/admin/add_review")
-async def add_review(author: str = Form(...), text: str = Form(...)):
+# Публичный эндпоинт для добавления отзывов клиентами/мастером с фото
+@app.post("/api/add_review")
+async def add_review(
+    author: str = Form(...),
+    text: str = Form(...),
+    photo: UploadFile = File(None),
+):
+  photo_url = None
+  if photo and photo.filename:
+    file_path = os.path.join(UPLOAD_DIR, photo.filename)
+    with open(file_path, "wb") as buffer:
+      content = await photo.read()
+      buffer.write(content)
+    photo_url = f"/{file_path}"
+
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
   cursor.execute(
-      "INSERT INTO reviews (author, text) VALUES (?, ?)", (author, text)
+      "INSERT INTO reviews (author, text, photo_url) VALUES (?, ?, ?)",
+      (author, text, photo_url),
   )
   conn.commit()
   conn.close()

@@ -36,7 +36,6 @@ def init_db():
             image_url TEXT
         )
     """)
-  # Таблица отзывов (теперь с поддержкой фото)
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,6 +121,17 @@ async def add_slot(date: str = Form(...), time: str = Form(...)):
   return {"status": "success"}
 
 
+# Эндпоинт для удаления слота мастером
+@app.post("/api/admin/delete_slot")
+async def delete_slot(slot_id: int = Form(...)):
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute("DELETE FROM slots WHERE id = ?", (slot_id,))
+  conn.commit()
+  conn.close()
+  return {"status": "success"}
+
+
 @app.post("/api/admin/add_work")
 async def add_work(file: UploadFile = File(...)):
   file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -137,7 +147,6 @@ async def add_work(file: UploadFile = File(...)):
   return {"status": "success"}
 
 
-# Публичный эндпоинт для добавления отзывов клиентами/мастером с фото
 @app.post("/api/add_review")
 async def add_review(
     author: str = Form(...),

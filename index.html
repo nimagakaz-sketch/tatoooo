@@ -80,11 +80,9 @@
         .slot-item.booked { background: rgba(255, 255, 255, 0.01); color: #555; border-color: rgba(255, 255, 255, 0.02); cursor: not-allowed; text-decoration: line-through; }
         .slot-item.selected { background: var(--accent-red); border-color: var(--accent-red); color: #fff; box-shadow: 0 4px 15px rgba(255, 42, 54, 0.4); font-weight: bold; }
 
-        /* Стили для предпросмотра эскиза */
         .preview-container { margin-top: 8px; text-align: center; display: none; }
         .preview-container img { max-width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--glass-border); }
 
-        /* Карточка активной заявки в админке */
         .admin-booking-card {
             background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border);
             border-radius: 12px; padding: 12px; margin-bottom: 10px; font-size: 12px;
@@ -298,14 +296,17 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Автоматически выставляем минимальную дату (сегодня) в календаре админки
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('newSlotDate').min = todayStr;
         
+        // Добавлены оба мастера: ты и @liizzytatt
+        const admins = ['youngyannniii', 'liizzytatt'];
+
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
             document.getElementById('telegram_id').value = user.username ? `@${user.username}` : `${user.first_name} (ID: ${user.id})`;
-            if (user.username && user.username.toLowerCase() === 'youngyannniii') {
+            
+            if (user.username && admins.includes(user.username.toLowerCase())) {
                 document.getElementById('adminTriggerBtn').style.display = 'block';
             }
         } else {
@@ -323,7 +324,6 @@
         function openAdminModal() { document.getElementById('adminModal').classList.add('open'); }
         function closeAdminModal() { document.getElementById('adminModal').classList.remove('open'); }
 
-        // Превью эскиза при выборе файла
         function previewSketch(input) {
             const file = input.files[0];
             if (file) {
@@ -370,7 +370,6 @@
             adminBookingsList.innerHTML = '';
 
             data.slots.forEach(slot => {
-                // Слоты для клиента
                 const div = document.createElement('div');
                 div.className = `slot-item ${slot.is_booked ? 'booked' : ''}`;
                 div.innerHTML = `${slot.date}<br><b>${slot.time}</b>`;
@@ -383,7 +382,6 @@
                 }
                 slotsContainer.appendChild(div);
 
-                // Управление слотами в админке
                 const adminRow = document.createElement('div');
                 adminRow.className = 'admin-slot-row';
                 adminRow.innerHTML = `
@@ -392,7 +390,6 @@
                 `;
                 adminSlotsList.appendChild(adminRow);
 
-                // Активные брони в админке
                 if (slot.is_booked) {
                     const bookingCard = document.createElement('div');
                     bookingCard.className = 'admin-booking-card';
@@ -413,7 +410,6 @@
                 adminBookingsList.innerHTML = '<div style="color: var(--hint-color); font-size: 11px;">Нет активных записей</div>';
             }
 
-            // Работы
             const worksContainer = document.getElementById('worksContainer');
             worksContainer.innerHTML = '';
             data.works.forEach(work => {
@@ -423,7 +419,6 @@
                 worksContainer.appendChild(div);
             });
 
-            // Отзывы
             const reviewsContainer = document.getElementById('reviewsContainer');
             reviewsContainer.innerHTML = '';
             data.reviews.forEach(rev => {

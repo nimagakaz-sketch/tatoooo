@@ -10,6 +10,10 @@ app = FastAPI()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
 MASTER_CHAT_ID = os.getenv("MASTER_CHAT_ID", "YOUR_MASTER_CHAT_ID")
+SECOND_MASTER_CHAT_ID = os.getenv(
+    "SECOND_MASTER_CHAT_ID", "6573422629"
+)  # ID второго мастера (@liizzytatt)
+
 bot = Bot(token=BOT_TOKEN)
 
 UPLOAD_DIR = "static/uploads"
@@ -140,7 +144,6 @@ async def delete_slot(slot_id: int = Form(...)):
   return {"status": "success"}
 
 
-# Отмена брони мастером (освобождение слота)
 @app.post("/api/admin/cancel_booking")
 async def cancel_booking(slot_id: int = Form(...)):
   conn = sqlite3.connect("database.db")
@@ -266,12 +269,25 @@ async def submit_appointment(
       f"📐 Размер и место: {tattoo_size}"
   )
 
-  with open(file_path, "rb") as photo_file:
-    await bot.send_photo(
-        chat_id=MASTER_CHAT_ID,
-        photo=photo_file,
-        caption=msg_text,
-        parse_mode="Markdown",
-    )
+  if MASTER_CHAT_ID and MASTER_CHAT_ID != "YOUR_MASTER_CHAT_ID":
+    with open(file_path, "rb") as photo_file:
+      await bot.send_photo(
+          chat_id=MASTER_CHAT_ID,
+          photo=photo_file,
+          caption=msg_text,
+          parse_mode="Markdown",
+      )
+
+  if SECOND_MASTER_CHAT_ID:
+    try:
+      with open(file_path, "rb") as photo_file:
+        await bot.send_photo(
+            chat_id=SECOND_MASTER_CHAT_ID,
+            photo=photo_file,
+            caption=msg_text,
+            parse_mode="Markdown",
+        )
+    except Exception as e:
+      print(f"Failed to send to second master: {e}")
 
   return JSONResponse({"status": "success"})

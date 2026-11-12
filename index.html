@@ -80,17 +80,34 @@
         .slot-item.booked { background: rgba(255, 255, 255, 0.01); color: #555; border-color: rgba(255, 255, 255, 0.02); cursor: not-allowed; text-decoration: line-through; }
         .slot-item.selected { background: var(--accent-red); border-color: var(--accent-red); color: #fff; box-shadow: 0 4px 15px rgba(255, 42, 54, 0.4); font-weight: bold; }
 
-        /* Список слотов в админке с кнопкой удаления */
+        /* Стили для предпросмотра эскиза */
+        .preview-container { margin-top: 8px; text-align: center; display: none; }
+        .preview-container img { max-width: 100%; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--glass-border); }
+
+        /* Карточка активной заявки в админке */
+        .admin-booking-card {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 12px; margin-bottom: 10px; font-size: 12px;
+        }
+        .admin-booking-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--accent-red); margin-bottom: 4px; }
+        .admin-booking-details { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+        .admin-booking-details img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+        .cancel-btn {
+            background: rgba(255, 42, 54, 0.2); color: #ff2a36; border: 1px solid rgba(255, 42, 54, 0.4);
+            padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; margin-top: 6px;
+        }
+        .cancel-btn:hover { background: #ff2a36; color: #fff; }
+
         .admin-slot-row {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 10px; margin-bottom: 6px;
             font-size: 13px; border: 1px solid var(--glass-border);
         }
         .delete-slot-btn {
-            background: rgba(255, 42, 54, 0.2); color: #ff2a36; border: 1px solid rgba(255, 42, 54, 0.4);
-            padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold;
+            background: rgba(255, 255, 255, 0.1); color: #fff; border: none;
+            padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 11px;
         }
-        .delete-slot-btn:hover { background: #ff2a36; color: #fff; }
+        .delete-slot-btn:hover { background: #ff2a36; }
 
         .file-upload-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -123,6 +140,14 @@
             cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px;
         }
         .admin-trigger-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+        .share-btn {
+            display: block; width: 100%; margin-top: 10px; padding: 12px;
+            background: rgba(40, 160, 255, 0.1); border: 1px solid rgba(40, 160, 255, 0.3);
+            border-radius: 14px; color: #5ac8fa; font-size: 12px; font-weight: 600;
+            cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .share-btn:hover { background: rgba(40, 160, 255, 0.2); }
 
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -173,9 +198,12 @@
                         <label>Эскиз или референс</label>
                         <label class="file-upload-btn">
                             📁 Выбрать фото эскиза
-                            <input type="file" name="tattoo_photo" accept="image/*" required onchange="document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : 'Файл не выбран'">
+                            <input type="file" name="tattoo_photo" accept="image/*" required onchange="previewSketch(this)">
                         </label>
                         <div class="file-name" id="fileName">Файл не выбран</div>
+                        <div class="preview-container" id="previewContainer">
+                            <img id="sketchPreview" src="" alt="Preview">
+                        </div>
                     </div>
                     <input type="hidden" name="telegram_id" id="telegram_id">
                     <button type="submit" class="submit-btn">Забронировать сеанс</button>
@@ -197,7 +225,6 @@
                 <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">Отзывы клиентов</h3>
                 <div id="reviewsContainer"></div>
 
-                <!-- Форма добавления отзыва для клиентов -->
                 <div style="margin-top: 20px; border-top: 1px dashed var(--glass-border); padding-top: 15px;">
                     <div style="font-size: 11px; font-weight: 700; color: var(--accent-red); margin-bottom: 10px; text-transform: uppercase;">Оставить свой отзыв</div>
                     <input type="text" id="clientReviewAuthor" placeholder="Ваше имя" style="margin-bottom: 8px;">
@@ -213,6 +240,7 @@
         </div>
 
         <button class="admin-trigger-btn" id="adminTriggerBtn" onclick="openAdminModal()">⚙️ Панель мастера</button>
+        <button class="share-btn" onclick="shareApp()">🔗 Поделиться студией</button>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО ПАНЕЛИ МАСТЕРА -->
@@ -233,7 +261,12 @@
             </div>
             <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="saveSettings()">Сохранить настройки</button>
 
-            <!-- Добавление и удаление слотов -->
+            <!-- Активные заявки клиентов -->
+            <div class="form-group">
+                <label>Активные заявки клиентов</label>
+                <div id="adminBookingsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
+            </div>
+
             <div class="form-group">
                 <label>Добавить свободный сеанс</label>
                 <input type="date" id="newSlotDate" style="margin-bottom: 8px;">
@@ -242,18 +275,16 @@
             </div>
 
             <div class="form-group">
-                <label>Управление существующими слотами</label>
+                <label>Управление всеми слотами</label>
                 <div id="adminSlotsList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
             </div>
 
-            <!-- Загрузка работы -->
             <div class="form-group">
                 <label>Загрузить работу в портфолио</label>
                 <input type="file" id="adminWorkFile" accept="image/*" style="margin-bottom: 8px; font-size: 12px; display: block;">
                 <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="uploadWork()">Загрузить работу</button>
             </div>
 
-            <!-- Добавление отзыва от мастера -->
             <div class="form-group">
                 <label>Добавить отзыв (от мастера)</label>
                 <input type="text" id="adminReviewAuthor" placeholder="Имя клиента" style="margin-bottom: 8px;">
@@ -266,6 +297,10 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        // Автоматически выставляем минимальную дату (сегодня) в календаре админки
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('newSlotDate').min = todayStr;
         
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             const user = tg.initDataUnsafe.user;
@@ -288,6 +323,27 @@
         function openAdminModal() { document.getElementById('adminModal').classList.add('open'); }
         function closeAdminModal() { document.getElementById('adminModal').classList.remove('open'); }
 
+        // Превью эскиза при выборе файла
+        function previewSketch(input) {
+            const file = input.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('sketchPreview').src = e.target.result;
+                    document.getElementById('previewContainer').style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function shareApp() {
+            const appUrl = window.location.href;
+            navigator.clipboard.writeText(appUrl).then(() => {
+                alert("Ссылка на студию скопирована в буфер обмена!");
+            });
+        }
+
         async function loadData() {
             const res = await fetch('/api/data');
             const data = await res.json();
@@ -304,16 +360,17 @@
                 }
             }
 
-            // Отрисовка слотов для клиентов
             const slotsContainer = document.getElementById('slotsContainer');
             slotsContainer.innerHTML = '';
             
-            // Отрисовка слотов для админки с кнопками удаления
             const adminSlotsList = document.getElementById('adminSlotsList');
             adminSlotsList.innerHTML = '';
 
+            const adminBookingsList = document.getElementById('adminBookingsList');
+            adminBookingsList.innerHTML = '';
+
             data.slots.forEach(slot => {
-                // Клиентский слот
+                // Слоты для клиента
                 const div = document.createElement('div');
                 div.className = `slot-item ${slot.is_booked ? 'booked' : ''}`;
                 div.innerHTML = `${slot.date}<br><b>${slot.time}</b>`;
@@ -326,7 +383,7 @@
                 }
                 slotsContainer.appendChild(div);
 
-                // Админский слот с кнопкой удаления
+                // Управление слотами в админке
                 const adminRow = document.createElement('div');
                 adminRow.className = 'admin-slot-row';
                 adminRow.innerHTML = `
@@ -334,9 +391,29 @@
                     <button class="delete-slot-btn" onclick="deleteSlot(${slot.id})">Удалить</button>
                 `;
                 adminSlotsList.appendChild(adminRow);
+
+                // Активные брони в админке
+                if (slot.is_booked) {
+                    const bookingCard = document.createElement('div');
+                    bookingCard.className = 'admin-booking-card';
+                    bookingCard.innerHTML = `
+                        <div class="admin-booking-header">📅 ${slot.date} в ${slot.time}</div>
+                        <div><b>Клиент:</b> ${slot.client_name} (${slot.client_tg})</div>
+                        <div><b>Размер:</b> ${slot.tattoo_size}</div>
+                        <div class="admin-booking-details">
+                            ${slot.tattoo_photo ? `<img src="${slot.tattoo_photo}" alt="Sketch">` : ''}
+                            <button class="cancel-btn" onclick="cancelBooking(${slot.id})">Освободить слот</button>
+                        </div>
+                    `;
+                    adminBookingsList.appendChild(bookingCard);
+                }
             });
 
-            // Отрисовка работ
+            if (adminBookingsList.innerHTML === '') {
+                adminBookingsList.innerHTML = '<div style="color: var(--hint-color); font-size: 11px;">Нет активных записей</div>';
+            }
+
+            // Работы
             const worksContainer = document.getElementById('worksContainer');
             worksContainer.innerHTML = '';
             data.works.forEach(work => {
@@ -346,7 +423,7 @@
                 worksContainer.appendChild(div);
             });
 
-            // Отрисовка отзывов
+            // Отзывы
             const reviewsContainer = document.getElementById('reviewsContainer');
             reviewsContainer.innerHTML = '';
             data.reviews.forEach(rev => {
@@ -408,11 +485,17 @@
 
         async function deleteSlot(slotId) {
             if(!confirm("Удалить этот слот из расписания?")) return;
-
             const formData = new FormData();
             formData.append('slot_id', slotId);
-
             await fetch('/api/admin/delete_slot', { method: 'POST', body: formData });
+            loadData();
+        }
+
+        async function cancelBooking(slotId) {
+            if(!confirm("Отменить эту запись и освободить слот?")) return;
+            const formData = new FormData();
+            formData.append('slot_id', slotId);
+            await fetch('/api/admin/cancel_booking', { method: 'POST', body: formData });
             loadData();
         }
 
@@ -446,7 +529,7 @@
             await fetch('/api/add_review', { method: 'POST', body: formData });
             document.getElementById('clientReviewAuthor').value = '';
             document.getElementById('clientReviewText').value = '';
-            clientReviewPhoto.value = '';
+            photoInput.value = '';
             document.getElementById('reviewFileName').textContent = 'Фото не выбрано';
             loadData();
             alert("Спасибо! Ваш отзыв опубликован.");

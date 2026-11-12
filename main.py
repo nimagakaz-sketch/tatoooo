@@ -27,7 +27,9 @@ def init_db():
             time TEXT,
             is_booked BOOLEAN DEFAULT 0,
             client_name TEXT,
-            client_tg TEXT
+            client_tg TEXT,
+            tattoo_size TEXT,
+            tattoo_photo TEXT
         )
     """)
   cursor.execute("""
@@ -78,12 +80,19 @@ async def get_data():
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
 
-  cursor.execute("SELECT id, date, time, is_booked FROM slots")
+  cursor.execute("""
+        SELECT id, date, time, is_booked, client_name, client_tg, tattoo_size, tattoo_photo 
+        FROM slots
+    """)
   slots = [{
       "id": r[0],
       "date": r[1],
       "time": r[2],
       "is_booked": bool(r[3]),
+      "client_name": r[4],
+      "client_tg": r[5],
+      "tattoo_size": r[6],
+      "tattoo_photo": r[7],
   } for r in cursor.fetchall()]
 
   cursor.execute("SELECT id, image_url FROM works")
@@ -121,12 +130,29 @@ async def add_slot(date: str = Form(...), time: str = Form(...)):
   return {"status": "success"}
 
 
-# Эндпоинт для удаления слота мастером
 @app.post("/api/admin/delete_slot")
 async def delete_slot(slot_id: int = Form(...)):
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
   cursor.execute("DELETE FROM slots WHERE id = ?", (slot_id,))
+  conn.commit()
+  conn.close()
+  return {"status": "success"}
+
+
+# Отмена брони мастером (освобождение слота)
+@app.post("/api/admin/cancel_booking")
+async def cancel_booking(slot_id: int = Form(...)):
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute(
+      """
+        UPDATE slots 
+        SET is_booked = 0, client_name = NULL, client_tg = NULL, tattoo_size = NULL, tattoo_photo = NULL 
+        WHERE id = ?
+    """,
+      (slot_id,),
+  )
   conn.commit()
   conn.close()
   return {"status": "success"}
@@ -202,6 +228,13 @@ async def submit_appointment(
         status_code=400, detail="Пожалуйста, выберите свободный слот времени!"
     )
 
+  file_path = os.path.join(UPLOAD_DIR, tattoo_photo.filename)
+  with open(file_path, "wb") as buffer:
+    content = await tattoo_photo.read()
+    buffer.write(content)
+
+  photo_url = f"/{file_path}"
+
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
 
@@ -215,17 +248,15 @@ async def submit_appointment(
   slot_date, slot_time = slot[0], slot[1]
 
   cursor.execute(
-      "UPDATE slots SET is_booked = 1, client_name = ?, client_tg = ? WHERE id"
-      " = ?",
-      (client_name, telegram_id, slot_id),
+      """
+        UPDATE slots 
+        SET is_booked = 1, client_name = ?, client_tg = ?, tattoo_size = ?, tattoo_photo = ? 
+        WHERE id = ?
+    """,
+      (client_name, telegram_id, tattoo_size, photo_url, slot_id),
   )
   conn.commit()
   conn.close()
-
-  file_path = os.path.join(UPLOAD_DIR, tattoo_photo.filename)
-  with open(file_path, "wb") as buffer:
-    content = await tattoo_photo.read()
-    buffer.write(content)
 
   msg_text = (
       "🔥 **Новая запись на сеанс!**\n\n"

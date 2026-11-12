@@ -4,7 +4,7 @@ import sqlite3
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from telegram import Bot, FSInputFile
+from telegram import Bot
 
 app = FastAPI()
 

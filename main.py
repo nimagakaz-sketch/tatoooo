@@ -1,18 +1,18 @@
+import asyncio
 from datetime import datetime
 import os
 import sqlite3
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from telegram import Bot
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 app = FastAPI()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
 MASTER_CHAT_ID = os.getenv("MASTER_CHAT_ID", "YOUR_MASTER_CHAT_ID")
-SECOND_MASTER_CHAT_ID = os.getenv(
-    "SECOND_MASTER_CHAT_ID", "6573422629"
-)  # ID второго мастера (@liizzytatt)
+SECOND_MASTER_CHAT_ID = os.getenv("SECOND_MASTER_CHAT_ID", "6573422629")
 
 bot = Bot(token=BOT_TOKEN)
 
@@ -270,13 +270,16 @@ async def submit_appointment(
   )
 
   if MASTER_CHAT_ID and MASTER_CHAT_ID != "YOUR_MASTER_CHAT_ID":
-    with open(file_path, "rb") as photo_file:
-      await bot.send_photo(
-          chat_id=MASTER_CHAT_ID,
-          photo=photo_file,
-          caption=msg_text,
-          parse_mode="Markdown",
-      )
+    try:
+      with open(file_path, "rb") as photo_file:
+        await bot.send_photo(
+            chat_id=MASTER_CHAT_ID,
+            photo=photo_file,
+            caption=msg_text,
+            parse_mode="Markdown",
+        )
+    except Exception as e:
+      print(f"Error sending to master 1: {e}")
 
   if SECOND_MASTER_CHAT_ID:
     try:
@@ -288,6 +291,40 @@ async def submit_appointment(
             parse_mode="Markdown",
         )
     except Exception as e:
-      print(f"Failed to send to second master: {e}")
+      print(f"Error sending to master 2: {e}")
 
   return JSONResponse({"status": "success"})
+
+
+# Логика телеграм-бота (/start)
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+  user_name = update.effective_user.first_name
+  welcome_text = (
+      f"Привет, {user_name}! 👋\n\n"
+      "Добро пожаловать в нашу тату-студию. Здесь ты можешь выбрать удобное"
+      " время, посмотреть портфолио и записаться на сеанс в пару кликов."
+  )
+  keyboard = [[
+      InlineKeyboardButton(
+          "🔥 Открыть студию и записаться",
+          web_app={"url": "https://tatoooo.onrender.com"},
+      )
+  ]]
+  reply_markup = InlineKeyboardMarkup(keyboard)
+  await update.message.reply_text(
+      welcome_text, reply_markup=reply_markup, parse_mode="Markdown"
+  )
+
+
+async def run_telegram_bot():
+  if BOT_TOKEN and BOT_TOKEN != "YOUR_BOT_TOKEN":
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start_command))
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+
+
+@app.on_event("startup")
+async def startup_event():
+  asyncio.create_task(run_telegram_bot())

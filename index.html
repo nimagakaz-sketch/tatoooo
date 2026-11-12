@@ -299,7 +299,6 @@
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('newSlotDate').min = todayStr;
         
-        // Добавлены оба мастера: ты и @liizzytatt
         const admins = ['youngyannniii', 'liizzytatt'];
 
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -338,7 +337,7 @@
         }
 
         function shareApp() {
-            const appUrl = window.location.href;
+            const appUrl = "https://tatoooo.onrender.com";
             navigator.clipboard.writeText(appUrl).then(() => {
                 alert("Ссылка на студию скопирована в буфер обмена!");
             });

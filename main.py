@@ -44,7 +44,7 @@ async def submit_appointment(
 
     msg_text = (
         "🔥 **Новая запись на сеанс!**\n\n"
-        f"👤 Клиент: {client_name} (TG ID: `{telegram_id}`)\n"
+        f"👤 Клиент: {client_name} (Telegram: `{telegram_id}`)\n"
         f"📅 Дата: {session_date}\n"
         f"⏰ Время: {session_time}\n"
         f"📏 Размер и место: {tattoo_size}"

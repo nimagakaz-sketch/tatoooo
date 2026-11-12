@@ -90,9 +90,15 @@
         .admin-booking-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--accent-red); margin-bottom: 4px; }
         .admin-booking-details { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
         .admin-booking-details img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+        
+        .admin-btns-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid var(--glass-border);
+            padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; text-decoration: none; display: inline-block;
+        }
+        .action-btn:hover { background: rgba(255, 255, 255, 0.2); }
         .cancel-btn {
             background: rgba(255, 42, 54, 0.2); color: #ff2a36; border: 1px solid rgba(255, 42, 54, 0.4);
-            padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: bold; margin-top: 6px;
         }
         .cancel-btn:hover { background: #ff2a36; color: #fff; }
 
@@ -343,6 +349,14 @@
             });
         }
 
+        // Функция копирования напоминания клиенту
+        function copyReminder(clientName, date, time, size) {
+            const reminderText = `Привет, ${clientName}! 👋 Напоминаем про твою запись на сеанс в тату-студию на ${date} в ${time}.\n\n🔹 Эскиз/размер: ${size}\n\nЖдем тебя! Если планы поменялись, пожалуйста, предупреди заранее. 🖤`;
+            navigator.clipboard.writeText(reminderText).then(() => {
+                alert("Текст напоминания скопирован в буфер обмена!");
+            });
+        }
+
         async function loadData() {
             const res = await fetch('/api/data');
             const data = await res.json();
@@ -390,6 +404,12 @@
                 adminSlotsList.appendChild(adminRow);
 
                 if (slot.is_booked) {
+                    // Формируем ссылку для связи в телеграм (если ник с @, убираем @)
+                    let tgLink = "#";
+                    if (slot.client_tg && slot.client_tg.startsWith('@')) {
+                        tgLink = `https://t.me/${slot.client_tg.substring(1)}`;
+                    }
+
                     const bookingCard = document.createElement('div');
                     bookingCard.className = 'admin-booking-card';
                     bookingCard.innerHTML = `
@@ -398,7 +418,13 @@
                         <div><b>Размер:</b> ${slot.tattoo_size}</div>
                         <div class="admin-booking-details">
                             ${slot.tattoo_photo ? `<img src="${slot.tattoo_photo}" alt="Sketch">` : ''}
-                            <button class="cancel-btn" onclick="cancelBooking(${slot.id})">Освободить слот</button>
+                            <div style="flex: 1;">
+                                <div class="admin-btns-row">
+                                    ${slot.client_tg && slot.client_tg.startsWith('@') ? `<a href="${tgLink}" target="_blank" class="action-btn">💬 Написать</a>` : ''}
+                                    <button class="action-btn" onclick="copyReminder('${slot.client_name}', '${slot.date}', '${slot.time}', '${slot.tattoo_size}')">📋 Напоминание</button>
+                                </div>
+                                <button class="action-btn cancel-btn" onclick="cancelBooking(${slot.id})">Освободить слот</button>
+                            </div>
                         </div>
                     `;
                     adminBookingsList.appendChild(bookingCard);

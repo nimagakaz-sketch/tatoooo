@@ -296,7 +296,6 @@ async def submit_appointment(
   return JSONResponse({"status": "success"})
 
 
-# Логика телеграм-бота (/start)
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
   user_name = update.effective_user.first_name
   welcome_text = (

@@ -17,11 +17,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# Инициализация базы данных SQLite
 def init_db():
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
-  # Таблица свободных/занятых слотов
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS slots (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,14 +30,12 @@ def init_db():
             client_tg TEXT
         )
     """)
-  # Таблица портфолио
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS works (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             image_url TEXT
         )
     """)
-  # Таблица отзывов
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +58,6 @@ async def index():
   return "index.html not found", 404
 
 
-# API: Получить список свободных слотов, работ и отзывов
 @app.get("/api/data")
 async def get_data():
   conn = sqlite3.connect("database.db")
@@ -86,7 +81,6 @@ async def get_data():
   return JSONResponse({"slots": slots, "works": works, "reviews": reviews})
 
 
-# API для мастера: Добавить свободный слот
 @app.post("/api/admin/add_slot")
 async def add_slot(date: str = Form(...), time: str = Form(...)):
   conn = sqlite3.connect("database.db")
@@ -99,7 +93,6 @@ async def add_slot(date: str = Form(...), time: str = Form(...)):
   return {"status": "success"}
 
 
-# API для мастера: Загрузить работу
 @app.post("/api/admin/add_work")
 async def add_work(file: UploadFile = File(...)):
   file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -115,7 +108,6 @@ async def add_work(file: UploadFile = File(...)):
   return {"status": "success"}
 
 
-# API для мастера: Добавить отзыв
 @app.post("/api/admin/add_review")
 async def add_review(author: str = Form(...), text: str = Form(...)):
   conn = sqlite3.connect("database.db")
@@ -128,15 +120,19 @@ async def add_review(author: str = Form(...), text: str = Form(...)):
   return {"status": "success"}
 
 
-# Обработка записи клиента на выбранный слот
 @app.post("/submit")
 async def submit_appointment(
-    slot_id: int = Form(...),
+    slot_id: int = Form(None),
     client_name: str = Form(...),
     tattoo_size: str = Form(...),
     telegram_id: str = Form(...),
     tattoo_photo: UploadFile = File(...),
 ):
+  if not slot_id:
+    raise HTTPException(
+        status_code=400, detail="Пожалуйста, выберите свободный слот времени!"
+    )
+
   conn = sqlite3.connect("database.db")
   cursor = conn.cursor()
 
@@ -149,7 +145,6 @@ async def submit_appointment(
 
   slot_date, slot_time = slot[0], slot[1]
 
-  # Бронируем слот в БД
   cursor.execute(
       "UPDATE slots SET is_booked = 1, client_name = ?, client_tg = ? WHERE id"
       " = ?",
@@ -158,13 +153,11 @@ async def submit_appointment(
   conn.commit()
   conn.close()
 
-  # Сохраняем фото эскиза
   file_path = os.path.join(UPLOAD_DIR, tattoo_photo.filename)
   with open(file_path, "wb") as buffer:
     content = await tattoo_photo.read()
     buffer.write(content)
 
-  # Отправляем уведомление мастеру в Telegram
   msg_text = (
       "🔥 **Новая запись на сеанс!**\n\n"
       f"👤 Клиент: {client_name}\n"
@@ -173,16 +166,12 @@ async def submit_appointment(
       f"📐 Размер и место: {tattoo_size}"
   )
 
-  photo_file = FSInputFile(file_path)
-  await bot.send_photo(
-      chat_id=MASTER_CHAT_ID, photo=photo_file, caption=msg_text, parse_mode="Markdown"
-  )
+  with open(file_path, "rb") as photo_file:
+    await bot.send_photo(
+        chat_id=MASTER_CHAT_ID,
+        photo=photo_file,
+        caption=msg_text,
+        parse_mode="Markdown",
+    )
 
-  return HTMLResponse(
-      """
-        <script>
-            alert("Запись успешно оформлена! Мастер скоро свяжется с вами.");
-            window.location.href = "/";
-        </script>
-    """
-  )
+  return JSONResponse({"status": "success"})

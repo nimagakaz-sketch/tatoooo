@@ -1,10 +1,10 @@
 import asyncio
-from datetime import datetime
 import os
-import sqlite3
+from typing import List
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from supabase import Client, create_client
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -14,61 +14,30 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
 MASTER_CHAT_ID = os.getenv("MASTER_CHAT_ID", "YOUR_MASTER_CHAT_ID")
 SECOND_MASTER_CHAT_ID = os.getenv("SECOND_MASTER_CHAT_ID", "6573422629")
 
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+
+supabase: Client = (
+    create_client(SUPABASE_URL, SUPABASE_KEY)
+    if SUPABASE_URL and SUPABASE_KEY
+    else None
+)
 bot = Bot(token=BOT_TOKEN)
 
-UPLOAD_DIR = "static/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-def init_db():
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS slots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT,
-            time TEXT,
-            is_booked BOOLEAN DEFAULT 0,
-            client_name TEXT,
-            client_tg TEXT,
-            tattoo_size TEXT,
-            tattoo_photo TEXT
-        )
-    """)
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS works (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            image_url TEXT
-        )
-    """)
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS reviews (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            author TEXT,
-            text TEXT,
-            photo_url TEXT
-        )
-    """)
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )
-    """)
-  cursor.execute(
-      "INSERT OR IGNORE INTO settings (key, value) VALUES ('studio_name',"
-      " 'Tattoo Studio')"
-  )
-  cursor.execute(
-      "INSERT OR IGNORE INTO settings (key, value) VALUES ('bg_url',"
-      " 'https://images.unsplash.com/photo-1544457070-4cd773b4d71e?q=80&w=1000&auto=format&fit=crop')"
-  )
-  conn.commit()
-  conn.close()
+async def upload_to_supabase(file: UploadFile) -> str:
+  if not supabase or not file or not file.filename:
+    return None
+  file_content = await file.read()
+  file_path = f"{int(asyncio.get_event_loop().time())}_{file.filename}"
 
-
-init_db()
+  supabase.storage.from_("uploads").upload(
+      path=file_path, file=file_content, file_options={"content-type": file.content_type}
+  )
+  public_url = f"{SUPABASE_URL}/storage/v1/object/public/uploads/{file_path}"
+  return public_url
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -81,39 +50,34 @@ async def index():
 
 @app.get("/api/data")
 async def get_data():
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
+  if not supabase:
+    return JSONResponse({"slots": [], "works": [], "reviews": [], "settings": {}})
 
-  cursor.execute("""
-        SELECT id, date, time, is_booked, client_name, client_tg, tattoo_size, tattoo_photo 
-        FROM slots
-    """)
+  slots_res = supabase.table("slots").select("*").execute()
+  works_res = supabase.table("works").select("*").execute()
+  reviews_res = supabase.table("reviews").select("*").execute()
+  settings_res = supabase.table("settings").select("*").execute()
+
   slots = [{
-      "id": r[0],
-      "date": r[1],
-      "time": r[2],
-      "is_booked": bool(r[3]),
-      "client_name": r[4],
-      "client_tg": r[5],
-      "tattoo_size": r[6],
-      "tattoo_photo": r[7],
-  } for r in cursor.fetchall()]
+      "id": r["id"],
+      "date": r["date"],
+      "time": r["time"],
+      "is_booked": bool(r["is_booked"]),
+      "client_name": r.get("client_name"),
+      "client_tg": r.get("client_tg"),
+      "tattoo_size": r.get("tattoo_size"),
+      "tattoo_photo": r.get("tattoo_photo"),
+  } for r in slots_res.data]
 
-  cursor.execute("SELECT id, image_url FROM works")
-  works = [{"id": r[0], "url": r[1]} for r in cursor.fetchall()]
-
-  cursor.execute("SELECT id, author, text, photo_url FROM reviews")
+  works = [{"id": r["id"], "url": r["image_url"]} for r in works_res.data]
   reviews = [{
-      "id": r[0],
-      "author": r[1],
-      "text": r[2],
-      "photo_url": r[3],
-  } for r in cursor.fetchall()]
+      "id": r["id"],
+      "author": r["author"],
+      "text": r["text"],
+      "photo_url": r.get("photo_url"),
+  } for r in reviews_res.data]
+  settings = {r["key"]: r["value"] for r in settings_res.data}
 
-  cursor.execute("SELECT key, value FROM settings")
-  settings = {row[0]: row[1] for row in cursor.fetchall()}
-
-  conn.close()
   return JSONResponse({
       "slots": slots,
       "works": works,
@@ -124,55 +88,49 @@ async def get_data():
 
 @app.post("/api/admin/add_slot")
 async def add_slot(date: str = Form(...), time: str = Form(...)):
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute(
-      "INSERT INTO slots (date, time, is_booked) VALUES (?, ?, 0)", (date, time)
-  )
-  conn.commit()
-  conn.close()
+  if supabase:
+    supabase.table("slots").insert(
+        {"date": date, "time": time, "is_booked": False}
+    ).execute()
   return {"status": "success"}
 
 
 @app.post("/api/admin/delete_slot")
 async def delete_slot(slot_id: int = Form(...)):
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute("DELETE FROM slots WHERE id = ?", (slot_id,))
-  conn.commit()
-  conn.close()
+  if supabase:
+    supabase.table("slots").delete().eq("id", slot_id).execute()
   return {"status": "success"}
 
 
 @app.post("/api/admin/cancel_booking")
 async def cancel_booking(slot_id: int = Form(...)):
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute(
-      """
-        UPDATE slots 
-        SET is_booked = 0, client_name = NULL, client_tg = NULL, tattoo_size = NULL, tattoo_photo = NULL 
-        WHERE id = ?
-    """,
-      (slot_id,),
-  )
-  conn.commit()
-  conn.close()
+  if supabase:
+    supabase.table("slots").update({
+        "is_booked": False,
+        "client_name": None,
+        "client_tg": None,
+        "tattoo_size": None,
+        "tattoo_photo": None,
+    }).eq("id", slot_id).execute()
   return {"status": "success"}
 
 
 @app.post("/api/admin/add_work")
-async def add_work(file: UploadFile = File(...)):
-  file_path = os.path.join(UPLOAD_DIR, file.filename)
-  with open(file_path, "wb") as buffer:
-    content = await file.read()
-    buffer.write(content)
+async def add_work(files: List[UploadFile] = File(...)):
+  if not supabase:
+    return {"status": "error"}
+  for file in files:
+    if file.filename:
+      public_url = await upload_to_supabase(file)
+      if public_url:
+        supabase.table("works").insert({"image_url": public_url}).execute()
+  return {"status": "success"}
 
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute("INSERT INTO works (image_url) VALUES (?)", (f"/{file_path}",))
-  conn.commit()
-  conn.close()
+
+@app.post("/api/admin/delete_work")
+async def delete_work(work_id: int = Form(...)):
+  if supabase:
+    supabase.table("works").delete().eq("id", work_id).execute()
   return {"status": "success"}
 
 
@@ -183,38 +141,37 @@ async def add_review(
     photo: UploadFile = File(None),
 ):
   photo_url = None
-  if photo and photo.filename:
-    file_path = os.path.join(UPLOAD_DIR, photo.filename)
-    with open(file_path, "wb") as buffer:
-      content = await photo.read()
-      buffer.write(content)
-    photo_url = f"/{file_path}"
+  if photo and photo.filename and supabase:
+    photo_url = await upload_to_supabase(photo)
 
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute(
-      "INSERT INTO reviews (author, text, photo_url) VALUES (?, ?, ?)",
-      (author, text, photo_url),
-  )
-  conn.commit()
-  conn.close()
+  if supabase:
+    supabase.table("reviews").insert({
+        "author": author,
+        "text": text,
+        "photo_url": photo_url,
+    }).execute()
   return {"status": "success"}
 
 
 @app.post("/api/admin/update_settings")
 async def update_settings(studio_name: str = Form(...), bg_url: str = Form(...)):
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ('studio_name', ?)",
-      (studio_name,),
-  )
-  cursor.execute(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES ('bg_url', ?)",
-      (bg_url,),
-  )
-  conn.commit()
-  conn.close()
+  if supabase:
+    supabase.table("settings").upsert({
+        "key": "studio_name",
+        "value": studio_name,
+    }).execute()
+    supabase.table("settings").upsert(
+        {"key": "bg_url", "value": bg_url}
+    ).execute()
+  return {"status": "success"}
+
+
+@app.post("/api/admin/toggle_snow")
+async def toggle_snow(enabled: str = Form(...)):
+  if supabase:
+    supabase.table("settings").upsert(
+        {"key": "snow_enabled", "value": enabled}
+    ).execute()
   return {"status": "success"}
 
 
@@ -226,40 +183,27 @@ async def submit_appointment(
     telegram_id: str = Form(...),
     tattoo_photo: UploadFile = File(...),
 ):
-  if not slot_id:
-    raise HTTPException(
-        status_code=400, detail="Пожалуйста, выберите свободный слот времени!"
-    )
+  if not slot_id or not supabase:
+    raise HTTPException(status_code=400, detail="Ошибка бронирования")
 
-  file_path = os.path.join(UPLOAD_DIR, tattoo_photo.filename)
-  with open(file_path, "wb") as buffer:
-    content = await tattoo_photo.read()
-    buffer.write(content)
+  photo_url = await upload_to_supabase(tattoo_photo)
+  if not photo_url:
+    raise HTTPException(status_code=400, detail="Ошибка загрузки фото эскиза")
 
-  photo_url = f"/{file_path}"
-
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-
-  cursor.execute("SELECT date, time, is_booked FROM slots WHERE id = ?", (slot_id,))
-  slot = cursor.fetchone()
-
-  if not slot or slot[2] == 1:
-    conn.close()
+  slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
+  if not slot_res.data or slot_res.data[0]["is_booked"]:
     raise HTTPException(status_code=400, detail="Этот слот уже занят!")
 
-  slot_date, slot_time = slot[0], slot[1]
+  slot = slot_res.data[0]
+  slot_date, slot_time = slot["date"], slot["time"]
 
-  cursor.execute(
-      """
-        UPDATE slots 
-        SET is_booked = 1, client_name = ?, client_tg = ?, tattoo_size = ?, tattoo_photo = ? 
-        WHERE id = ?
-    """,
-      (client_name, telegram_id, tattoo_size, photo_url, slot_id),
-  )
-  conn.commit()
-  conn.close()
+  supabase.table("slots").update({
+      "is_booked": True,
+      "client_name": client_name,
+      "client_tg": telegram_id,
+      "tattoo_size": tattoo_size,
+      "tattoo_photo": photo_url,
+  }).eq("id", slot_id).execute()
 
   msg_text = (
       "🔥 **Новая запись на сеанс!**\n\n"
@@ -271,25 +215,23 @@ async def submit_appointment(
 
   if MASTER_CHAT_ID and MASTER_CHAT_ID != "YOUR_MASTER_CHAT_ID":
     try:
-      with open(file_path, "rb") as photo_file:
-        await bot.send_photo(
-            chat_id=MASTER_CHAT_ID,
-            photo=photo_file,
-            caption=msg_text,
-            parse_mode="Markdown",
-        )
+      await bot.send_photo(
+          chat_id=MASTER_CHAT_ID,
+          photo=photo_url,
+          caption=msg_text,
+          parse_mode="Markdown",
+      )
     except Exception as e:
       print(f"Error sending to master 1: {e}")
 
   if SECOND_MASTER_CHAT_ID:
     try:
-      with open(file_path, "rb") as photo_file:
-        await bot.send_photo(
-            chat_id=SECOND_MASTER_CHAT_ID,
-            photo=photo_file,
-            caption=msg_text,
-            parse_mode="Markdown",
-        )
+      await bot.send_photo(
+          chat_id=SECOND_MASTER_CHAT_ID,
+          photo=photo_url,
+          caption=msg_text,
+          parse_mode="Markdown",
+      )
     except Exception as e:
       print(f"Error sending to master 2: {e}")
 

@@ -33,12 +33,11 @@
             transition: background-image 0.5s ease;
         }
 
-        .container { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 50px; }
+        .container { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 50px; position: relative; z-index: 2; }
 
         .header { text-align: center; margin-bottom: 24px; padding-top: 10px; }
         .header h1 { font-size: 24px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 25px rgba(255, 42, 54, 0.6); }
 
-        /* Тулбар / Таббар Liquid Glass */
         .tabs {
             display: flex;
             background: rgba(15, 15, 22, 0.75);
@@ -100,7 +99,7 @@
         }
         .admin-booking-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--accent-red); margin-bottom: 4px; }
         .admin-booking-details { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
-        .admin-booking-details img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+        .admin-booking-details img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; cursor: pointer; }
         
         .admin-btns-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
         
@@ -134,13 +133,14 @@
         .submit-btn:active { transform: scale(0.98); }
 
         .grid-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .gallery-item { border-radius: 14px; overflow: hidden; height: 160px; background: #15151a; border: 1px solid var(--glass-border); }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-item { border-radius: 14px; overflow: hidden; height: 160px; background: #15151a; border: 1px solid var(--glass-border); cursor: pointer; position: relative; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .gallery-item:hover img { transform: scale(1.05); }
         
         .review-card { background: rgba(0,0,0,0.4); padding: 14px; border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--glass-border); }
         .review-author { font-weight: 700; font-size: 13px; color: var(--accent-red); margin-bottom: 4px; }
         .review-text { font-size: 13px; color: #ddd; margin-bottom: 8px; }
-        .review-img { width: 100%; height: 140px; border-radius: 12px; object-fit: cover; margin-top: 6px; border: 1px solid var(--glass-border); }
+        .review-img { width: 100%; height: 140px; border-radius: 12px; object-fit: cover; margin-top: 6px; border: 1px solid var(--glass-border); cursor: pointer; }
 
         .admin-trigger-btn {
             display: none; width: 100%; margin-top: 30px; padding: 12px;
@@ -176,15 +176,34 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-title { font-size: 14px; font-weight: 700; color: var(--accent-red); text-transform: uppercase; letter-spacing: 0.5px; }
         .close-modal { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
+
+        .zoom-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.92); z-index: 2000; justify-content: center; align-items: center; padding: 12px;
+        }
+        .zoom-modal.open { display: flex; }
+        .zoom-modal img { max-width: 100%; max-height: 90vh; border-radius: 12px; object-fit: contain; }
+
+        /* Canvas для снега */
+        #snowCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
+    <canvas id="snowCanvas"></canvas>
+
     <div class="container">
         <div class="header">
             <h1 id="studioTitleHeader">Tattoo Studio</h1>
         </div>
 
-        <!-- Тулбар в стиле Liquid Glass -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('booking', this)">Запись</button>
             <button class="tab-btn" onclick="switchTab('works', this)">Работы</button>
@@ -200,7 +219,6 @@
                         <input type="text" name="client_name" placeholder="Как к вам обращаться?" required>
                     </div>
 
-                    <!-- Выпадающее окно 1: Выбор даты -->
                     <div class="form-group">
                         <label>1. Выберите дату сеанса</label>
                         <select id="dateSelect" onchange="onDateSelected(this.value)" required>
@@ -208,7 +226,6 @@
                         </select>
                     </div>
 
-                    <!-- Выпадающее окно 2: Выбор времени (появляется при выборе даты) -->
                     <div class="form-group" id="timeSection" style="display: none;">
                         <label>2. Выберите время сеанса</label>
                         <select id="timeSelect" onchange="onTimeSelected(this.value)" required>
@@ -230,7 +247,7 @@
                         </label>
                         <div class="file-name" id="fileName">Файл не выбран</div>
                         <div class="preview-container" id="previewContainer">
-                            <img id="sketchPreview" src="" alt="Preview">
+                            <img id="sketchPreview" src="" alt="Preview" onclick="openZoom(this.src)">
                         </div>
                     </div>
                     <input type="hidden" name="telegram_id" id="telegram_id">
@@ -279,6 +296,12 @@
                 <button class="close-modal" onclick="closeAdminModal()">✕</button>
             </div>
 
+            <!-- Управление эффектом снега -->
+            <div class="form-group">
+                <label>Эффект падающего снега</label>
+                <button type="button" class="submit-btn" id="snowToggleBtn" style="padding: 12px; font-size: 13px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);" onclick="toggleSnow()">❄️ Выключить снег</button>
+            </div>
+
             <div class="form-group">
                 <label>Название студии</label>
                 <input type="text" id="settingStudioName" placeholder="Tattoo Studio">
@@ -289,13 +312,11 @@
             </div>
             <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="saveSettings()">Сохранить настройки</button>
 
-            <!-- Активные заявки клиентов -->
             <div class="form-group">
                 <label>Активные заявки клиентов</label>
                 <div id="adminBookingsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
             </div>
 
-            <!-- Удобное добавление сеансов для мастера с быстрыми кнопками -->
             <div class="form-group">
                 <label>Добавить свободный сеанс</label>
                 <input type="date" id="newSlotDate" style="margin-bottom: 8px;">
@@ -320,9 +341,18 @@
             </div>
 
             <div class="form-group">
-                <label>Загрузить работу в портфолио</label>
-                <input type="file" id="adminWorkFile" accept="image/*" style="margin-bottom: 8px; font-size: 12px; display: block;">
-                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="uploadWork()">Загрузить работу</button>
+                <label>Загрузить работы в портфолио (можно несколько)</label>
+                <label class="file-upload-btn" style="margin-bottom: 8px; font-size: 12px;">
+                    📁 Выбрать фото работ
+                    <input type="file" id="adminWorkFiles" accept="image/*" multiple onchange="document.getElementById('worksCountText').textContent = this.files.length ? `Выбрано файлов: ${this.files.length}` : 'Файлы не выбраны'">
+                </label>
+                <div class="file-name" id="worksCountText" style="margin-bottom: 8px;">Файлы не выбраны</div>
+                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="uploadWorks()">Загрузить в портфолио</button>
+            </div>
+
+            <div class="form-group">
+                <label>Удаление работ из портфолио</label>
+                <div id="adminWorksList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
             </div>
 
             <div class="form-group">
@@ -334,13 +364,17 @@
         </div>
     </div>
 
+    <div class="zoom-modal" id="zoomModal" onclick="closeZoom()">
+        <img id="zoomImage" src="" alt="Zoomed Photo">
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('newSlotDate').min = todayStr;
-        document.getElementById('newSlotDate').value = todayStr; // Автоматически ставим сегодняшнюю дату для удобства мастера
+        document.getElementById('newSlotDate').value = todayStr;
         
         const admins = ['youngyannniii', 'liizzytatt'];
 
@@ -356,6 +390,93 @@
             document.getElementById('telegram_id').value = "@youngyannniii";
         }
 
+        // --- ЛОГИКА СНЕГА ---
+        let snowEnabled = true;
+        const canvas = document.getElementById('snowCanvas');
+        const ctx = canvas.getContext('2d');
+        let snowflakes = [];
+        let animationId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function initSnowflakes() {
+            snowflakes = [];
+            const count = 45;
+            for (let i = 0; i < count; i++) {
+                snowflakes.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 3 + 1,
+                    speed: Math.random() * 1.2 + 0.5,
+                    wind: Math.random() * 0.6 - 0.3,
+                    opacity: Math.random() * 0.7 + 0.3
+                });
+            }
+        }
+
+        function drawSnow() {
+            if (!snowEnabled) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            snowflakes.forEach(f => {
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${f.opacity})`;
+                ctx.fill();
+
+                f.y += f.speed;
+                f.x += f.wind;
+
+                if (f.y > canvas.height) {
+                    f.y = 0;
+                    f.x = Math.random() * canvas.width;
+                }
+                if (f.x > canvas.width || f.x < 0) {
+                    f.x = Math.random() * canvas.width;
+                }
+            });
+
+            animationId = requestAnimationFrame(drawSnow);
+        }
+
+        function startSnow() {
+            snowEnabled = true;
+            canvas.style.display = 'block';
+            initSnowflakes();
+            cancelAnimationFrame(animationId);
+            drawSnow();
+            document.getElementById('snowToggleBtn').textContent = '❄️ Выключить снег';
+            document.getElementById('snowToggleBtn').style.background = 'rgba(255,255,255,0.06)';
+        }
+
+        function stopSnow() {
+            snowEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.style.display = 'none';
+            cancelAnimationFrame(animationId);
+            document.getElementById('snowToggleBtn').textContent = '❄️ Включить снег';
+            document.getElementById('snowToggleBtn').style.background = 'rgba(255, 42, 54, 0.2)';
+        }
+
+        async function toggleSnow() {
+            const newState = snowEnabled ? 'false' : 'true';
+            const formData = new FormData();
+            formData.append('enabled', newState);
+            
+            await fetch('/api/admin/toggle_snow', { method: 'POST', body: formData });
+            if (newState === 'true') {
+                startSnow();
+            } else {
+                stopSnow();
+            }
+        }
+        // ---------------------
+
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -365,6 +486,14 @@
 
         function openAdminModal() { document.getElementById('adminModal').classList.add('open'); }
         function closeAdminModal() { document.getElementById('adminModal').classList.remove('open'); }
+
+        function openZoom(url) {
+            document.getElementById('zoomImage').src = url;
+            document.getElementById('zoomModal').classList.add('open');
+        }
+        function closeZoom() {
+            document.getElementById('zoomModal').classList.remove('open');
+        }
 
         function previewSketch(input) {
             const file = input.files[0];
@@ -410,6 +539,13 @@
                 if(bgUrl) {
                     document.body.style.backgroundImage = `linear-gradient(rgba(8, 8, 10, 0.85), rgba(8, 8, 10, 0.85)), url('${bgUrl}')`;
                 }
+
+                // Синхронизация статуса снега из базы
+                if (data.settings.snow_enabled === 'false') {
+                    stopSnow();
+                } else {
+                    startSnow();
+                }
             }
 
             globalSlots = data.slots;
@@ -420,6 +556,9 @@
 
             const adminBookingsList = document.getElementById('adminBookingsList');
             adminBookingsList.innerHTML = '';
+
+            const adminWorksList = document.getElementById('adminWorksList');
+            adminWorksList.innerHTML = '';
 
             data.slots.forEach(slot => {
                 const adminRow = document.createElement('div');
@@ -443,7 +582,7 @@
                         <div><b>Клиент:</b> ${slot.client_name} (${slot.client_tg})</div>
                         <div><b>Размер:</b> ${slot.tattoo_size}</div>
                         <div class="admin-booking-details">
-                            ${slot.tattoo_photo ? `<img src="${slot.tattoo_photo}" alt="Sketch">` : ''}
+                            ${slot.tattoo_photo ? `<img src="${slot.tattoo_photo}" alt="Sketch" onclick="openZoom('${slot.tattoo_photo}')">` : ''}
                             <div style="flex: 1;">
                                 <div class="admin-btns-row">
                                     ${slot.client_tg && slot.client_tg.startsWith('@') ? `<a href="${tgLink}" target="_blank" class="action-btn">💬 Написать</a>` : ''}
@@ -466,22 +605,36 @@
             data.works.forEach(work => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
-                div.innerHTML = `<img src="${work.url}" alt="Work">`;
+                div.innerHTML = `<img src="${work.url}" alt="Work" onclick="openZoom('${work.url}')">`;
                 worksContainer.appendChild(div);
+
+                const adminWorkRow = document.createElement('div');
+                adminWorkRow.className = 'admin-slot-row';
+                adminWorkRow.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="${work.url}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover;" onclick="openZoom('${work.url}')">
+                        <span style="font-size: 11px; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">ID: ${work.id}</span>
+                    </div>
+                    <button class="delete-slot-btn" onclick="deleteWork(${work.id})">Удалить</button>
+                `;
+                adminWorksList.appendChild(adminWorkRow);
             });
+
+            if (data.works.length === 0) {
+                adminWorksList.innerHTML = '<div style="color: var(--hint-color); font-size: 11px;">Портфолио пусто</div>';
+            }
 
             const reviewsContainer = document.getElementById('reviewsContainer');
             reviewsContainer.innerHTML = '';
             data.reviews.forEach(rev => {
                 const div = document.createElement('div');
                 div.className = 'review-card';
-                let photoHtml = rev.photo_url ? `<img src="${rev.photo_url}" class="review-img" alt="Review Photo">` : '';
+                let photoHtml = rev.photo_url ? `<img src="${rev.photo_url}" class="review-img" alt="Review Photo" onclick="openZoom('${rev.photo_url}')">` : '';
                 div.innerHTML = `<div class="review-author">${rev.author}</div><div class="review-text">${rev.text}</div>${photoHtml}`;
                 reviewsContainer.appendChild(div);
             });
         }
 
-        // Заполнение выпадающего окна дат для клиента
         function renderDateDropdown() {
             const dateSelect = document.getElementById('dateSelect');
             const currentSelected = selectedDate;
@@ -512,14 +665,12 @@
             }
         }
 
-        // Обработка выбора даты клиентом
         function onDateSelected(date) {
             selectedDate = date;
             document.getElementById('selectedSlotId').value = '';
             renderTimeDropdown(date);
         }
 
-        // Заполнение выпадающего окна времени для выбранной даты
         function renderTimeDropdown(date) {
             const timeSection = document.getElementById('timeSection');
             const timeSelect = document.getElementById('timeSelect');
@@ -542,7 +693,6 @@
             });
         }
 
-        // Обработка выбора конкретного времени клиентом
         function onTimeSelected(slotId) {
             document.getElementById('selectedSlotId').value = slotId;
         }
@@ -595,7 +745,6 @@
             alert("Слот успешно добавлен в расписание!");
         }
 
-        // Быстрое добавление слота по кнопке-пресету для мастера
         async function quickAddSlot(timeStr) {
             const date = document.getElementById('newSlotDate').value;
             if(!date) return alert("Сначала выберите дату в календаре выше!");
@@ -625,37 +774,52 @@
             loadData();
         }
 
-        async function uploadWork() {
-            const fileInput = document.getElementById('adminWorkFile');
-            if(!fileInput.files[0]) return alert("Выберите файл!");
+        async function uploadWorks() {
+            const fileInput = document.getElementById('adminWorkFiles');
+            if(!fileInput.files || fileInput.files.length === 0) return alert("Выберите файлы!");
 
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
 
-            await fetch('/api/admin/add_work', { method: 'POST', body: formData });
-            fileInput.value = '';
+            const response = await fetch('/api/admin/add_work', { method: 'POST', body: formData });
+            if (response.ok) {
+                fileInput.value = '';
+                document.getElementById('worksCountText').textContent = 'Файлы не выбраны';
+                loadData();
+                alert("Работы успешно загружены в портфолио!");
+            } else {
+                alert("Ошибка при загрузке работ.");
+            }
+        }
+
+        async function deleteWork(workId) {
+            if(!confirm("Удалить эту работу из портфолио?")) return;
+            const formData = new FormData();
+            formData.append('work_id', workId);
+            await fetch('/api/admin/delete_work', { method: 'POST', body: formData });
             loadData();
-            alert("Работа загружена в портфолио!");
         }
 
         async function submitClientReview() {
             const author = document.getElementById('clientReviewAuthor').value;
             const text = document.getElementById('clientReviewText').value;
-            const photoInput = document.getElementById('clientReviewPhoto');
+            const photoInput = document.getElementById('clientReviewRow') || document.getElementById('clientReviewPhoto');
 
             if(!author || !text) return alert("Заполните ваше имя и текст отзыва!");
 
             const formData = new FormData();
             formData.append('author', author);
             formData.append('text', text);
-            if(photoInput.files[0]) {
+            if(photoInput && photoInput.files[0]) {
                 formData.append('photo', photoInput.files[0]);
             }
 
             await fetch('/api/add_review', { method: 'POST', body: formData });
             document.getElementById('clientReviewAuthor').value = '';
             document.getElementById('clientReviewText').value = '';
-            photoInput.value = '';
+            if(photoInput) photoInput.value = '';
             document.getElementById('reviewFileName').textContent = 'Фото не выбрано';
             loadData();
             alert("Спасибо! Ваш отзыв опубликован.");

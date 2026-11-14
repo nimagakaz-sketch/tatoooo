@@ -13,5 +13,6 @@ pydantic==2.13.5
 python-multipart==0.0.33
 python-telegram-bot==21.10
 starlette==1.10.0
+supabase
 uvicorn==0.54.0
 yarl==1.25.1

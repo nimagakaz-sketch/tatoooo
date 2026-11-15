@@ -4,7 +4,6 @@ import logging
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from supabase import create_client, Client
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -34,16 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic модели для приема JSON
-class SlotItem(BaseModel):
-    date: str
-    time: str
-
-class SettingItem(BaseModel):
-    key: str
-    value: str
-
-# Инициализация Telegram приложения
+# Инициализация Telegram приложения через Webhook
 application = None
 if BOT_TOKEN:
     application = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -66,7 +56,6 @@ async def startup_event():
     if application:
         await application.initialize()
         await application.start()
-        # Автоматическая установка вебхука через системную переменную Render
         render_url = os.getenv("RENDER_EXTERNAL_URL")
         if render_url:
             webhook_url = f"{render_url}/webhook"
@@ -98,7 +87,7 @@ async def read_root():
             return f.read()
     return "Tattoo Studio API is running!"
 
-# --- НАСТРОЙКИ ---
+# --- НАСТРОЙКИ (Всеядный прием: JSON или FormData) ---
 @app.get("/api/settings")
 async def get_settings():
     if not supabase:
@@ -107,13 +96,25 @@ async def get_settings():
     return {item["key"]: item["value"] for item in response.data}
 
 @app.post("/api/settings")
-async def update_setting(item: SettingItem):
+async def update_setting(request: Request):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
-    supabase.table("settings").upsert({"key": item.key, "value": item.value}).execute()
+    try:
+        body = await request.json()
+        key = body.get("key")
+        value = body.get("value")
+    except Exception:
+        form = await request.form()
+        key = form.get("key")
+        value = form.get("value")
+
+    if not key:
+        raise HTTPException(status_code=400, detail="Key is required")
+
+    supabase.table("settings").upsert({"key": key, "value": value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ ---
+# --- СЛОТЫ (Всеядный прием: JSON или FormData) ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -122,10 +123,22 @@ async def get_slots():
     return response.data
 
 @app.post("/api/slots")
-async def add_slot(item: SlotItem):
+async def add_slot(request: Request):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
-    supabase.table("slots").insert({"date": item.date, "time": item.time, "is_booked": False}).execute()
+    try:
+        body = await request.json()
+        date = body.get("date")
+        time = body.get("time")
+    except Exception:
+        form = await request.form()
+        date = form.get("date")
+        time = form.get("time")
+
+    if not date or not time:
+        raise HTTPException(status_code=400, detail="Date and time are required")
+
+    supabase.table("slots").insert({"date": date, "time": time, "is_booked": False}).execute()
     return {"status": "success"}
 
 @app.delete("/api/slots/{slot_id}")

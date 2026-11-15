@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from supabase import create_client, Client
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -33,7 +34,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Главная страница (отдает index.html, если он лежит в корне)
+# Pydantic модели для приема JSON-данных от фронтенда
+class SlotItem(BaseModel):
+    date: str
+    time: str
+
+class SettingItem(BaseModel):
+    key: str
+    value: str
+
+# Главная страница
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     if os.path.exists("index.html"):
@@ -50,13 +60,13 @@ async def get_settings():
     return {item["key"]: item["value"] for item in response.data}
 
 @app.post("/api/settings")
-async def update_setting(key: str = Form(...), value: str = Form(...)):
+async def update_setting(item: SettingItem):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
-    supabase.table("settings").upsert({"key": key, "value": value}).execute()
+    supabase.table("settings").upsert({"key": item.key, "value": item.value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ ---
+# --- СЛОТЫ (ИСПРАВЛЕНО: прием JSON) ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -65,10 +75,10 @@ async def get_slots():
     return response.data
 
 @app.post("/api/slots")
-async def add_slot(date: str = Form(...), time: str = Form(...)):
+async def add_slot(item: SlotItem):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
-    supabase.table("slots").insert({"date": date, "time": time, "is_booked": False}).execute()
+    supabase.table("slots").insert({"date": item.date, "time": item.time, "is_booked": False}).execute()
     return {"status": "success"}
 
 @app.delete("/api/slots/{slot_id}")

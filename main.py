@@ -1,271 +1,221 @@
-import asyncio
 import os
-from typing import List
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from supabase import Client, create_client
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
+import asyncio
+import logging
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from supabase import create_client, Client
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Переменные окружения
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+MASTER_CHAT_ID = os.getenv("MASTER_CHAT_ID")
+SECOND_MASTER_CHAT_ID = os.getenv("SECOND_MASTER_CHAT_ID")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    logger.warning("Supabase credentials not fully set!")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
 
 app = FastAPI()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_BOT_TOKEN")
-MASTER_CHAT_ID = os.getenv("MASTER_CHAT_ID", "YOUR_MASTER_CHAT_ID")
-SECOND_MASTER_CHAT_ID = os.getenv("SECOND_MASTER_CHAT_ID", "6573422629")
-
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
-
-supabase: Client = (
-    create_client(SUPABASE_URL, SUPABASE_KEY)
-    if SUPABASE_URL and SUPABASE_KEY
-    else None
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-bot = Bot(token=BOT_TOKEN)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-async def upload_to_supabase(file: UploadFile) -> str:
-  if not supabase or not file or not file.filename:
-    return None
-  file_content = await file.read()
-  file_path = f"{int(asyncio.get_event_loop().time())}_{file.filename}"
-
-  supabase.storage.from_("uploads").upload(
-      path=file_path, file=file_content, file_options={"content-type": file.content_type}
-  )
-  public_url = f"{SUPABASE_URL}/storage/v1/object/public/uploads/{file_path}"
-  return public_url
-
-
+# Главная страница (отдает index.html, если он лежит в корне)
 @app.get("/", response_class=HTMLResponse)
-async def index():
-  if os.path.exists("index.html"):
-    with open("index.html", "r", encoding="utf-8") as f:
-      return f.read()
-  return "index.html not found", 404
+async def read_root():
+    if os.path.exists("index.html"):
+        with open("index.html", "r", encoding="utf-8") as f:
+            return f.read()
+    return "Tattoo Studio API is running!"
 
+# --- НАСТРОЙКИ ---
+@app.get("/api/settings")
+async def get_settings():
+    if not supabase:
+        return {}
+    response = supabase.table("settings").select("*").execute()
+    return {item["key"]: item["value"] for item in response.data}
 
-@app.get("/api/data")
-async def get_data():
-  if not supabase:
-    return JSONResponse({"slots": [], "works": [], "reviews": [], "settings": {}})
+@app.post("/api/settings")
+async def update_setting(key: str = Form(...), value: str = Form(...)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    supabase.table("settings").upsert({"key": key, "value": value}).execute()
+    return {"status": "success"}
 
-  slots_res = supabase.table("slots").select("*").execute()
-  works_res = supabase.table("works").select("*").execute()
-  reviews_res = supabase.table("reviews").select("*").execute()
-  settings_res = supabase.table("settings").select("*").execute()
+# --- СЛОТЫ ---
+@app.get("/api/slots")
+async def get_slots():
+    if not supabase:
+        return []
+    response = supabase.table("slots").select("*").order("id").execute()
+    return response.data
 
-  slots = [{
-      "id": r["id"],
-      "date": r["date"],
-      "time": r["time"],
-      "is_booked": bool(r["is_booked"]),
-      "client_name": r.get("client_name"),
-      "client_tg": r.get("client_tg"),
-      "tattoo_size": r.get("tattoo_size"),
-      "tattoo_photo": r.get("tattoo_photo"),
-  } for r in slots_res.data]
-
-  works = [{"id": r["id"], "url": r["image_url"]} for r in works_res.data]
-  reviews = [{
-      "id": r["id"],
-      "author": r["author"],
-      "text": r["text"],
-      "photo_url": r.get("photo_url"),
-  } for r in reviews_res.data]
-  settings = {r["key"]: r["value"] for r in settings_res.data}
-
-  return JSONResponse({
-      "slots": slots,
-      "works": works,
-      "reviews": reviews,
-      "settings": settings,
-  })
-
-
-@app.post("/api/admin/add_slot")
+@app.post("/api/slots")
 async def add_slot(date: str = Form(...), time: str = Form(...)):
-  if supabase:
-    supabase.table("slots").insert(
-        {"date": date, "time": time, "is_booked": False}
-    ).execute()
-  return {"status": "success"}
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    supabase.table("slots").insert({"date": date, "time": time, "is_booked": False}).execute()
+    return {"status": "success"}
 
-
-@app.post("/api/admin/delete_slot")
-async def delete_slot(slot_id: int = Form(...)):
-  if supabase:
+@app.delete("/api/slots/{slot_id}")
+async def delete_slot(slot_id: int):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
     supabase.table("slots").delete().eq("id", slot_id).execute()
-  return {"status": "success"}
+    return {"status": "success"}
 
-
-@app.post("/api/admin/cancel_booking")
-async def cancel_booking(slot_id: int = Form(...)):
-  if supabase:
-    supabase.table("slots").update({
-        "is_booked": False,
-        "client_name": None,
-        "client_tg": None,
-        "tattoo_size": None,
-        "tattoo_photo": None,
-    }).eq("id", slot_id).execute()
-  return {"status": "success"}
-
-
-@app.post("/api/admin/add_work")
-async def add_work(files: List[UploadFile] = File(...)):
-  if not supabase:
-    return {"status": "error"}
-  for file in files:
-    if file.filename:
-      public_url = await upload_to_supabase(file)
-      if public_url:
-        supabase.table("works").insert({"image_url": public_url}).execute()
-  return {"status": "success"}
-
-
-@app.post("/api/admin/delete_work")
-async def delete_work(work_id: int = Form(...)):
-  if supabase:
-    supabase.table("works").delete().eq("id", work_id).execute()
-  return {"status": "success"}
-
-
-@app.post("/api/add_review")
-async def add_review(
-    author: str = Form(...),
-    text: str = Form(...),
-    photo: UploadFile = File(None),
-):
-  photo_url = None
-  if photo and photo.filename and supabase:
-    photo_url = await upload_to_supabase(photo)
-
-  if supabase:
-    supabase.table("reviews").insert({
-        "author": author,
-        "text": text,
-        "photo_url": photo_url,
-    }).execute()
-  return {"status": "success"}
-
-
-@app.post("/api/admin/update_settings")
-async def update_settings(studio_name: str = Form(...), bg_url: str = Form(...)):
-  if supabase:
-    supabase.table("settings").upsert({
-        "key": "studio_name",
-        "value": studio_name,
-    }).execute()
-    supabase.table("settings").upsert(
-        {"key": "bg_url", "value": bg_url}
-    ).execute()
-  return {"status": "success"}
-
-
-@app.post("/api/admin/toggle_snow")
-async def toggle_snow(enabled: str = Form(...)):
-  if supabase:
-    supabase.table("settings").upsert(
-        {"key": "snow_enabled", "value": enabled}
-    ).execute()
-  return {"status": "success"}
-
-
-@app.post("/submit")
-async def submit_appointment(
-    slot_id: int = Form(None),
+# --- БРОНИРОВАНИЕ И УВЕДОМЛЕНИЯ МАСТЕРУ ---
+@app.post("/api/book")
+async def book_slot(
+    slot_id: int = Form(...),
     client_name: str = Form(...),
+    client_tg: str = Form(...),
     tattoo_size: str = Form(...),
-    telegram_id: str = Form(...),
-    tattoo_photo: UploadFile = File(...),
+    tattoo_photo: UploadFile = File(None)
 ):
-  if not slot_id or not supabase:
-    raise HTTPException(status_code=400, detail="Ошибка бронирования")
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    
+    photo_url = ""
+    if tattoo_photo:
+        file_bytes = await tattoo_photo.read()
+        file_name = f"{int(asyncio.get_event_loop().time())}_{tattoo_photo.filename}"
+        supabase.storage.from_("uploads").upload(file_name, file_bytes)
+        photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 
-  photo_url = await upload_to_supabase(tattoo_photo)
-  if not photo_url:
-    raise HTTPException(status_code=400, detail="Ошибка загрузки фото эскиза")
+    # Обновляем слот в базе
+    supabase.table("slots").update({
+        "is_booked": True,
+        "client_name": client_name,
+        "client_tg": client_tg,
+        "tattoo_size": tattoo_size,
+        "tattoo_photo": photo_url
+    }).eq("id", slot_id).execute()
 
-  slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
-  if not slot_res.data or slot_res.data[0]["is_booked"]:
-    raise HTTPException(status_code=400, detail="Этот слот уже занят!")
+    # Получаем данные слота для сообщения
+    slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
+    slot_data = slot_res.data[0] if slot_res.data else {}
 
-  slot = slot_res.data[0]
-  slot_date, slot_time = slot["date"], slot["time"]
+    # Отправка уведомления мастерам в Telegram
+    if BOT_TOKEN:
+        bot = Bot(token=BOT_TOKEN)
+        msg_text = (
+            f"🔥 Новая запись на сеанс!\n\n"
+            f"👤 Клиент: {client_name}\n"
+            f"🔗 Telegram: @{client_tg.lstrip('@')}\n"
+            f"📅 Дата и время: {slot_data.get('date')} в {slot_data.get('time')}\n"
+            f"📐 Размер и место: {tattoo_size}"
+        )
+        chat_ids = [MASTER_CHAT_ID, SECOND_MASTER_CHAT_ID]
+        for cid in chat_ids:
+            if cid:
+                try:
+                    if photo_url:
+                        await bot.send_photo(chat_id=cid, photo=photo_url, caption=msg_text)
+                    else:
+                        await bot.send_message(chat_id=cid, text=msg_text)
+                except Exception as e:
+                    logger.error(f"Error sending notification to {cid}: {e}")
 
-  supabase.table("slots").update({
-      "is_booked": True,
-      "client_name": client_name,
-      "client_tg": telegram_id,
-      "tattoo_size": tattoo_size,
-      "tattoo_photo": photo_url,
-  }).eq("id", slot_id).execute()
+    return {"status": "success"}
 
-  msg_text = (
-      "🔥 **Новая запись на сеанс!**\n\n"
-      f"👤 Клиент: {client_name}\n"
-      f"🔗 Telegram: `{telegram_id}`\n"
-      f"📅 Дата и время: {slot_date} в {slot_time}\n"
-      f"📐 Размер и место: {tattoo_size}"
-  )
+# --- ПОРТФОЛИО (РАБОТЫ) ---
+@app.get("/api/works")
+async def get_works():
+    if not supabase:
+        return []
+    response = supabase.table("works").select("*").order("id", desc=True).execute()
+    return response.data
 
-  if MASTER_CHAT_ID and MASTER_CHAT_ID != "YOUR_MASTER_CHAT_ID":
+@app.post("/api/works")
+async def add_work(file: UploadFile = File(...)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
     try:
-      await bot.send_photo(
-          chat_id=MASTER_CHAT_ID,
-          photo=photo_url,
-          caption=msg_text,
-          parse_mode="Markdown",
-      )
+        file_bytes = await file.read()
+        file_name = f"work_{int(asyncio.get_event_loop().time())}_{file.filename}"
+        supabase.storage.from_("uploads").upload(file_name, file_bytes)
+        public_url = supabase.storage.from_("uploads").get_public_url(file_name)
+        
+        supabase.table("works").insert({"image_url": public_url}).execute()
+        return {"status": "success", "url": public_url}
     except Exception as e:
-      print(f"Error sending to master 1: {e}")
+        logger.error(f"Error uploading work: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-  if SECOND_MASTER_CHAT_ID:
-    try:
-      await bot.send_photo(
-          chat_id=SECOND_MASTER_CHAT_ID,
-          photo=photo_url,
-          caption=msg_text,
-          parse_mode="Markdown",
-      )
-    except Exception as e:
-      print(f"Error sending to master 2: {e}")
+@app.delete("/api/works/{work_id}")
+async def delete_work(work_id: int):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    supabase.table("works").delete().eq("id", work_id).execute()
+    return {"status": "success"}
 
-  return JSONResponse({"status": "success"})
+# --- ОТЗЫВЫ ---
+@app.get("/api/reviews")
+async def get_reviews():
+    if not supabase:
+        return []
+    response = supabase.table("reviews").select("*").order("id", desc=True).execute()
+    return response.data
 
+@app.post("/api/reviews")
+async def add_review(author: str = Form(...), text: str = Form(...), photo: UploadFile = File(None)):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    photo_url = ""
+    if photo:
+        file_bytes = await photo.read()
+        file_name = f"review_{int(asyncio.get_event_loop().time())}_{photo.filename}"
+        supabase.storage.from_("uploads").upload(file_name, file_bytes)
+        photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 
+    supabase.table("reviews").insert({"author": author, "text": text, "photo_url": photo_url}).execute()
+    return {"status": "success"}
+
+@app.delete("/api/reviews/{review_id}")
+async def delete_review(review_id: int):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    supabase.table("reviews").delete().eq("id", review_id).execute()
+    return {"status": "success"}
+
+# --- TELEGRAM БОТ ---
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-  user_name = update.effective_user.first_name
-  welcome_text = (
-      f"Привет, {user_name}! 👋\n\n"
-      "Добро пожаловать в нашу тату-студию. Здесь ты можешь выбрать удобное"
-      " время, посмотреть портфолио и записаться на сеанс в пару кликов."
-  )
-  keyboard = [[
-      InlineKeyboardButton(
-          "🔥 Открыть студию и записаться",
-          web_app={"url": "https://tatoooo.onrender.com"},
-      )
-  ]]
-  reply_markup = InlineKeyboardMarkup(keyboard)
-  await update.message.reply_text(
-      welcome_text, reply_markup=reply_markup, parse_mode="Markdown"
-  )
+    keyboard = [
+        [InlineKeyboardButton("Записаться ✨", web_app=WebAppInfo(url="https://tatoooo.onrender.com"))]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "Привет! Добро пожаловать в нашу тату-студию 🖤\nНажми кнопку ниже, чтобы выбрать окошко для записи:",
+        reply_markup=reply_markup
+    )
 
-
-async def run_telegram_bot():
-  if BOT_TOKEN and BOT_TOKEN != "YOUR_BOT_TOKEN":
+async def main_bot():
+    if not BOT_TOKEN:
+        logger.warning("BOT_TOKEN not set, bot will not run.")
+        return
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start_command))
+    
     await application.initialize()
     await application.start()
     await application.updater.start_polling()
-
+    logger.info("Telegram bot started successfully.")
 
 @app.on_event("startup")
 async def startup_event():
-  asyncio.create_task(run_telegram_bot())
+    asyncio.create_task(main_bot())

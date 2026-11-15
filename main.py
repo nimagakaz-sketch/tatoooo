@@ -1,7 +1,7 @@
 import os
 import asyncio
 import logging
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic модели для приема JSON-данных от фронтенда
+# Pydantic модели для приема JSON
 class SlotItem(BaseModel):
     date: str
     time: str
@@ -42,6 +42,53 @@ class SlotItem(BaseModel):
 class SettingItem(BaseModel):
     key: str
     value: str
+
+# Инициализация Telegram приложения
+application = None
+if BOT_TOKEN:
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Записаться ✨", web_app=WebAppInfo(url="https://tatoooo.onrender.com"))]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "Привет! Добро пожаловать в нашу тату-студию 🖤\nНажми кнопку ниже, чтобы выбрать окошко для записи:",
+        reply_markup=reply_markup
+    )
+
+if application:
+    application.add_handler(CommandHandler("start", start_command))
+
+@app.on_event("startup")
+async def startup_event():
+    if application:
+        await application.initialize()
+        await application.start()
+        # Автоматическая установка вебхука через системную переменную Render
+        render_url = os.getenv("RENDER_EXTERNAL_URL")
+        if render_url:
+            webhook_url = f"{render_url}/webhook"
+            await application.bot.set_webhook(url=webhook_url)
+            logger.info(f"Webhook successfully set to {webhook_url}")
+        else:
+            logger.warning("RENDER_EXTERNAL_URL not set. Webhook could not be configured automatically.")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if application:
+        await application.stop()
+        await application.shutdown()
+
+@app.post("/webhook")
+async def telegram_webhook(request: Request):
+    if not application:
+        return {"status": "bot not configured"}
+    data = await request.json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return {"status": "ok"}
 
 # Главная страница
 @app.get("/", response_class=HTMLResponse)
@@ -66,7 +113,7 @@ async def update_setting(item: SettingItem):
     supabase.table("settings").upsert({"key": item.key, "value": item.value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ (ИСПРАВЛЕНО: прием JSON) ---
+# --- СЛОТЫ ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -107,7 +154,6 @@ async def book_slot(
         supabase.storage.from_("uploads").upload(file_name, file_bytes)
         photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 
-    # Обновляем слот в базе
     supabase.table("slots").update({
         "is_booked": True,
         "client_name": client_name,
@@ -116,11 +162,9 @@ async def book_slot(
         "tattoo_photo": photo_url
     }).eq("id", slot_id).execute()
 
-    # Получаем данные слота для сообщения
     slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
     slot_data = slot_res.data[0] if slot_res.data else {}
 
-    # Отправка уведомления мастерам в Telegram
     if BOT_TOKEN:
         bot = Bot(token=BOT_TOKEN)
         msg_text = (
@@ -143,7 +187,7 @@ async def book_slot(
 
     return {"status": "success"}
 
-# --- ПОРТФОЛИО (РАБОТЫ) ---
+# --- ПОРТФОЛИО ---
 @app.get("/api/works")
 async def get_works():
     if not supabase:
@@ -202,30 +246,3 @@ async def delete_review(review_id: int):
         raise HTTPException(status_code=500, detail="Supabase not configured")
     supabase.table("reviews").delete().eq("id", review_id).execute()
     return {"status": "success"}
-
-# --- TELEGRAM БОТ ---
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("Записаться ✨", web_app=WebAppInfo(url="https://tatoooo.onrender.com"))]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        "Привет! Добро пожаловать в нашу тату-студию 🖤\nНажми кнопку ниже, чтобы выбрать окошко для записи:",
-        reply_markup=reply_markup
-    )
-
-async def main_bot():
-    if not BOT_TOKEN:
-        logger.warning("BOT_TOKEN not set, bot will not run.")
-        return
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start_command))
-    
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
-    logger.info("Telegram bot started successfully.")
-
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(main_bot())

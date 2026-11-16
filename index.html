@@ -2,371 +2,79 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIIZZYTATTT • Запись на сеанс</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Запись на сеанс | Tattoo Studio</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #0f0f11;
-            --glass-bg: rgba(255, 255, 255, 0.07);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --accent: #ff334b;
-            --text-main: #ffffff;
-            --text-secondary: #a0a0ab;
+            --bg-color: var(--tg-theme-bg-color, #0d0d0d);
+            --text-color: var(--tg-theme-text-color, #f5f5f7);
+            --hint-color: var(--tg-theme-hint-color, #8e8e93);
+            --accent-red: #c51d24;
+            --card-bg: rgba(25, 25, 25, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 16px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 480px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-            color: #fff;
-        }
-
-        .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 14px;
-            backdrop-filter: blur(16px);
-        }
-
-        .card h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: var(--text-main);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 12px;
-            color: #fff;
-            font-size: 14px;
-            margin-bottom: 10px;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: var(--accent);
-        }
-
-        button.btn {
-            width: 100%;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 51, 75, 0.3);
-        }
-
-        .slots-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .slot-item {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-        }
-
-        .slot-item.booked {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .works-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .work-card {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 1;
-            background: rgba(0,0,0,0.5);
-        }
-
-        .work-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #ff334b;
-            border: none;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .quick-time {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .time-chip {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 16px; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; background-image: radial-gradient(circle at 50% 0%, rgba(197, 29, 36, 0.15) 0%, transparent 60%); }
+        .container { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 20px; }
+        .header { text-align: center; margin-bottom: 24px; padding-top: 10px; }
+        .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; color: #ffffff; text-transform: uppercase; text-shadow: 0 2px 10px rgba(197, 29, 36, 0.3); }
+        .header p { font-size: 14px; color: var(--hint-color); }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--hint-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="text"], input[type="date"], input[type="time"] { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-color); font-size: 16px; outline: none; transition: all 0.3s ease; }
+        input:focus { border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(197, 29, 36, 0.25); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; color: var(--text-color); font-size: 15px; font-weight: 500; cursor: pointer; }
+        input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .file-name { margin-top: 6px; font-size: 13px; color: var(--hint-color); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .submit-btn { width: 100%; margin-top: 24px; padding: 16px; background: linear-gradient(135deg, #e52d27 0%, #b31217 100%); color: #ffffff; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(197, 29, 36, 0.4); text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1 id="studioTitle">LIIZZYTATTT</h1>
-
-    <!-- Блок: Свободные окошки для записи -->
-    <div class="card">
-        <h3>📅 Свободные окошки</h3>
-        <div id="slotsContainer" class="slots-grid">
-            <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка слотов...</p>
+    <div class="container">
+        <div class="header">
+            <h1>Запись на сеанс</h1>
+            <p>Выберите удобное время и отправьте эскиз</p>
         </div>
-    </div>
-
-    <!-- Форма бронирования (появляется при клике на слот) -->
-    <div class="card" id="bookingFormCard" style="display: none;">
-        <h3>✍️ Записаться на сеанс</h3>
-        <p id="selectedSlotInfo" style="margin-bottom: 10px; font-size: 14px; color: var(--accent);"></p>
-        <input type="text" id="clientName" placeholder="Ваше имя">
-        <input type="text" id="clientTg" placeholder="Ваш Telegram (@username)">
-        <input type="text" id="tattooSize" placeholder="Размер и место">
-        <input type="file" id="tattooPhoto" accept="image/*">
-        <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
-    </div>
-
-    <!-- Блок: Портфолио -->
-    <div class="card">
-        <h3>🖤 Портфолио</h3>
-        <div id="worksContainer" class="works-grid">
-            <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
-        </div>
-    </div>
-
-    <!-- Блок: Панель мастера (добавление слотов и работ) -->
-    <div class="card">
-        <h3>➕ Добавить свободный сеанс</h3>
-        <input type="date" id="newSlotDate">
-        <div class="quick-time">
-            <div class="time-chip" onclick="setTime('11:00')">11:00</div>
-            <div class="time-chip" onclick="setTime('14:00')">14:00</div>
-            <div class="time-chip" onclick="setTime('17:00')">17:00</div>
-            <div class="time-chip" onclick="setTime('20:00')">20:00</div>
-        </div>
-        <input type="time" id="newSlotTime" value="12:30">
-        <button class="btn" onclick="addSlot()">Добавить слот</button>
-    </div>
-
-    <div class="card">
-        <h3>🖼 Загрузить работу в портфолио</h3>
-        <input type="file" id="workFile" accept="image/*">
-        <button class="btn" onclick="addWork()">Загрузить работу</button>
-    </div>
-
-    <div class="card">
-        <h3>📌 Активные заявки и управление</h3>
-        <div id="manageContainer" style="font-size: 13px; color: var(--text-secondary);">
-            Загрузка данных...
-        </div>
-    </div>
-</div>
-
-<script>
-    let appData = { slots: [], works: [], reviews: [], settings: {} };
-    let selectedSlotId = null;
-
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.expand();
-    }
-
-    function setTime(t) {
-        document.getElementById('newSlotTime').value = t;
-    }
-
-    async function loadData() {
-        try {
-            const res = await fetch('/api/data');
-            appData = await res.json();
-            renderUI();
-        } catch (e) {
-            console.error('Ошибка загрузки данных:', e);
-        }
-    }
-
-    function renderUI() {
-        if (appData.settings && appData.settings.studio_name) {
-            document.getElementById('studioTitle').innerText = appData.settings.studio_name.toUpperCase();
-        }
-
-        const slotsContainer = document.getElementById('slotsContainer');
-        if (!appData.slots || appData.slots.length === 0) {
-            slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Нет свободных окошек</p>';
-        } else {
-            slotsContainer.innerHTML = appData.slots.map(s => `
-                <div class="slot-item ${s.is_booked ? 'booked' : ''}" ${!s.is_booked ? `onclick="selectSlot(${s.id}, '${s.date}', '${s.time}')"` : ''}>
-                    <strong>${s.date}</strong><br>
-                    <span>${s.time}</span><br>
-                    <small style="color: ${s.is_booked ? 'var(--accent)' : '#4cd137'}">${s.is_booked ? 'Занято' : 'Свободно'}</small>
+        <div class="card">
+            <form id="bookingForm" action="/submit" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Ваше имя</label>
+                    <input type="text" name="client_name" placeholder="Как к вам обращаться?" required>
                 </div>
-            `).join('');
-        }
-
-        const worksContainer = document.getElementById('worksContainer');
-        if (!appData.works || appData.works.length === 0) {
-            worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Портфолио пока пусто</p>';
-        } else {
-            worksContainer.innerHTML = appData.works.map(w => `
-                <div class="work-card">
-                    <img src="${w.image_url || w.url}" alt="Work">
-                    <button class="delete-btn" onclick="deleteWork(${w.id})">×</button>
+                <div class="form-group">
+                    <label>Желаемая дата</label>
+                    <input type="date" name="session_date" required>
                 </div>
-            `).join('');
+                <div class="form-group">
+                    <label>Время сеанса</label>
+                    <input type="time" name="session_time" required>
+                </div>
+                <div class="form-group">
+                    <label>Размер и место татуировки</label>
+                    <input type="text" name="tattoo_size" placeholder="Например: 15х10 см, предплечье" required>
+                </div>
+                <div class="form-group">
+                    <label>Эскиз или референс</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-btn">📁 Выбрать фото эскиза</div>
+                        <input type="file" name="tattoo_photo" id="fileInput" accept="image/*" required onchange="document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : 'Файл не выбран'">
+                    </div>
+                    <div class="file-name" id="fileName">Файл не выбран</div>
+                </div>
+                <input type="hidden" name="telegram_id" id="telegram_id">
+                <button type="submit" class="submit-btn">Отправить заявку</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('telegram_id').value = tg.initDataUnsafe.user.id;
         }
-
-        const manageContainer = document.getElementById('manageContainer');
-        const bookedSlots = appData.slots.filter(s => s.is_booked);
-        
-        manageContainer.innerHTML = `
-            <p style="margin-bottom: 8px;"><b>Занятые записи клиентов:</b></p>
-            ${bookedSlots.length === 0 ? '<p style="margin-bottom: 12px; color: var(--text-secondary);">Нет активных записей</p>' : 
-                bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
-                    📅 ${s.date} ${s.time}<br>
-                    👤 ${s.client_name || 'Клиент'} (@${s.client_tg || 'нет'})<br>
-                    📐 ${s.tattoo_size || 'Не указано'}
-                </div>`).join('')}
-            <p style="margin-top: 12px; margin-bottom: 8px;"><b>Все слоты:</b></p>
-            <div>
-                ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 8px;"><span>${s.date} ${s.time} (${s.is_booked ? 'Занято' : 'Свободно'})</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
-            </div>
-        `;
-    }
-
-    function selectSlot(id, date, time) {
-        selectedSlotId = id;
-        document.getElementById('bookingFormCard').style.display = 'block';
-        document.getElementById('selectedSlotInfo').innerText = `Выбрано время: ${date} в ${time}`;
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    async function addSlot() {
-        const date = document.getElementById('newSlotDate').value;
-        const time = document.getElementById('newSlotTime').value;
-        if (!date || !time) return;
-        
-        const res = await fetch('/api/slots', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date, time })
-        });
-        if (res.ok) {
-            document.getElementById('newSlotDate').value = '';
-            loadData();
-        }
-    }
-
-    async function deleteSlot(id) {
-        if (!confirm('Удалить этот слот?')) return;
-        const res = await fetch(`/api/slots/${id}`, { method: 'DELETE' });
-        if (res.ok) loadData();
-    }
-
-    async function addWork() {
-        const fileInput = document.getElementById('workFile');
-        if (fileInput.files.length === 0) return;
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-
-        const res = await fetch('/api/works', { method: 'POST', body: formData });
-        if (res.ok) {
-            fileInput.value = '';
-            loadData();
-        }
-    }
-
-    async function deleteWork(id) {
-        if (!confirm('Удалить работу?')) return;
-        const res = await fetch(`/api/works/${id}`, { method: 'DELETE' });
-        if (res.ok) loadData();
-    }
-
-    async function submitBooking() {
-        const clientName = document.getElementById('clientName').value;
-        const clientTg = document.getElementById('clientTg').value;
-        const tattooSize = document.getElementById('tattooSize').value;
-        const photoFile = document.getElementById('tattooPhoto').files[0];
-
-        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) return;
-
-        const formData = new FormData();
-        formData.append('slot_id', selectedSlotId);
-        formData.append('client_name', clientName);
-        formData.append('client_tg', clientTg);
-        formData.append('tattoo_size', tattooSize);
-        if (photoFile) formData.append('tattoo_photo', photoFile);
-
-        const res = await fetch('/api/book', { method: 'POST', body: formData });
-        if (res.ok) {
-            document.getElementById('bookingFormCard').style.display = 'none';
-            document.getElementById('clientName').value = '';
-            document.getElementById('clientTg').value = '';
-            document.getElementById('tattooSize').value = '';
-            document.getElementById('tattooPhoto').value = '';
-            loadData();
-        }
-    }
-
-    loadData();
-</script>
-
+    </script>
 </body>
 </html>

@@ -7,20 +7,23 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #0b0b0e;
-            --glass-bg: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.12);
+            --bg-color: #070709;
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-hover: rgba(255, 51, 75, 0.4);
             --accent: #ff334b;
-            --accent-glow: rgba(255, 51, 75, 0.35);
-            --text-main: #ffffff;
-            --text-secondary: #9898a0;
+            --accent-glow: rgba(255, 51, 75, 0.25);
+            --text-main: #f3f3f5;
+            --text-secondary: #8e8e99;
+            --success: #00d26a;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -32,8 +35,9 @@
             flex-direction: column;
             align-items: center;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 51, 75, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(100, 50, 255, 0.06) 0%, transparent 40%);
+                radial-gradient(circle at 15% 10%, rgba(255, 51, 75, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 85% 90%, rgba(80, 40, 255, 0.05) 0%, transparent 45%);
+            background-attachment: fixed;
         }
 
         .container {
@@ -43,44 +47,48 @@
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            padding-top: 10px;
         }
 
         h1 {
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #fff 30%, #a0a0ab 100%);
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ffffff 40%, #a0a0ab 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .subtitle {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-secondary);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
         }
 
+        /* Премиальный таббар */
         .tabs {
             display: flex;
-            background: var(--glass-bg);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 5px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border-radius: 18px;
+            padding: 6px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
         .tab {
             flex: 1;
             text-align: center;
             padding: 12px 0;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--text-secondary);
-            border-radius: 12px;
+            border-radius: 14px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -89,11 +97,12 @@
             background: var(--accent);
             color: #fff;
             box-shadow: 0 4px 20px var(--accent-glow);
+            font-weight: 700;
         }
 
         .section {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .section.active {
@@ -101,43 +110,62 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Премиальные карточки */
         .card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 22px;
+            padding: 22px;
             margin-bottom: 16px;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .card h3 {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             color: var(--text-main);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
+        /* Поля ввода */
         input, select, textarea {
             width: 100%;
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(0, 0, 0, 0.45);
             border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 14px;
+            border-radius: 14px;
+            padding: 14px 16px;
             color: #fff;
             font-size: 14px;
             margin-bottom: 12px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
 
-        input:focus {
+        input:focus, textarea:focus {
             border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 51, 75, 0.15);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
         }
 
         button.btn {
@@ -146,45 +174,71 @@
             color: #fff;
             border: none;
             border-radius: 14px;
-            padding: 14px;
+            padding: 15px;
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 6px 20px var(--accent-glow);
-            transition: transform 0.2s;
+            box-shadow: 0 6px 24px var(--accent-glow);
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
         }
 
         button.btn:active {
             transform: scale(0.97);
+            opacity: 0.9;
         }
 
+        /* Сетка слотов */
         .slots-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 12px;
         }
 
         .slot-item {
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            padding: 14px;
+            border-radius: 16px;
+            padding: 16px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s ease;
         }
 
         .slot-item:hover {
-            border-color: var(--accent);
-            background: rgba(255, 51, 75, 0.05);
+            border-color: var(--glass-border-hover);
+            background: rgba(255, 51, 75, 0.03);
+            transform: translateY(-2px);
         }
 
         .slot-item.booked {
-            opacity: 0.4;
+            opacity: 0.35;
             cursor: not-allowed;
-            background: rgba(255, 255, 255, 0.01);
+            background: rgba(0, 0, 0, 0.2);
+            border-color: transparent;
         }
 
+        .slot-date {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .slot-time {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .slot-status {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Портфолио */
         .works-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -193,75 +247,94 @@
 
         .work-card {
             position: relative;
-            border-radius: 16px;
+            border-radius: 18px;
             overflow: hidden;
             aspect-ratio: 1;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
 
         .work-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.4s;
+        }
+
+        .work-card:hover img {
+            transform: scale(1.04);
         }
 
         .delete-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.75);
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
             color: var(--accent);
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(5px);
+            transition: 0.2s;
         }
 
+        .delete-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* Отзывы */
         .review-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 10px;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
         }
 
         .review-card strong {
             color: #fff;
             font-size: 15px;
+            letter-spacing: 0.2px;
         }
 
         .review-card p {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 13.5px;
             margin-top: 6px;
+            line-height: 1.4;
         }
 
         .quick-time {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             margin-bottom: 12px;
             flex-wrap: wrap;
         }
 
         .time-chip {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--glass-border);
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 10px;
             font-size: 13px;
             cursor: pointer;
             transition: 0.2s;
+            font-weight: 500;
         }
 
         .time-chip:hover {
             background: var(--accent);
             border-color: var(--accent);
+            color: #fff;
         }
     </style>
 </head>
@@ -270,49 +343,53 @@
 <div class="container">
     <div class="header">
         <h1 id="studioTitle">LIIZZYTATTT</h1>
-        <div class="subtitle">пространство художественной татуировки</div>
+        <div class="subtitle">Art Tattoo Studio</div>
     </div>
 
+    <!-- Таббар -->
     <div class="tabs" id="tabsContainer">
         <div class="tab active" onclick="switchTab('booking')">📅 Запись</div>
         <div class="tab" onclick="switchTab('works')">🖤 Работы</div>
         <div class="tab" onclick="switchTab('reviews')">💬 Отзывы</div>
     </div>
 
+    <!-- ВКЛАДКА 1: ЗАПИСЬ -->
     <div id="booking-section" class="section active">
         <div class="card">
             <h3>Свободные окошки</h3>
             <div id="slotsContainer" class="slots-grid">
-                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка слотов...</p>
+                <p style="color: var(--text-secondary); grid-column: span 2; text-align: center; padding: 20px;">Загрузка расписания...</p>
             </div>
         </div>
 
         <div class="card" id="bookingFormCard" style="display: none;">
             <h3>✍️ Забронировать сеанс</h3>
-            <p id="selectedSlotInfo" style="margin-bottom: 14px; font-size: 14px; color: var(--accent); font-weight: 600;"></p>
+            <p id="selectedSlotInfo" style="margin-bottom: 16px; font-size: 14px; color: var(--accent); font-weight: 600;"></p>
             <input type="text" id="clientName" placeholder="Ваше имя">
             <input type="text" id="clientTg" placeholder="Ваш Telegram (@username)">
             <input type="text" id="tattooSize" placeholder="Размер и место (например, 15x10 на бедре)">
-            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Эскиз или референс:</label>
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Эскиз или референс (необязательно):</label>
             <input type="file" id="tattooPhoto" accept="image/*">
             <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
         </div>
     </div>
 
+    <!-- ВКЛАДКА 2: РАБОТЫ -->
     <div id="works-section" class="section">
         <div class="card">
-            <h3>Портфолио</h3>
+            <h3>Портфолио мастера</h3>
             <div id="worksContainer" class="works-grid">
-                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
+                <p style="color: var(--text-secondary); grid-column: span 2; text-align: center; padding: 20px;">Загрузка портфолио...</p>
             </div>
         </div>
     </div>
 
+    <!-- ВКЛАДКА 3: ОТЗЫВЫ -->
     <div id="reviews-section" class="section">
         <div class="card">
-            <h3>Что говорят клиенты</h3>
+            <h3>Отзывы клиентов</h3>
             <div id="reviewsContainer">
-                <p style="color: var(--text-secondary);">Загрузка отзывов...</p>
+                <p style="color: var(--text-secondary); text-align: center; padding: 20px;">Загрузка отзывов...</p>
             </div>
         </div>
 
@@ -401,12 +478,13 @@
                         <button class="btn" onclick="addSlot()">Опубликовать слот</button>
                     </div>
                     <div class="card">
-                        <h3>🖼 Загрузить работу в портфолио</h3>
-                        <input type="file" id="workFile" accept="image/*">
-                        <button class="btn" onclick="addWork()">Загрузить работу</button>
+                        <h3>🖼 Загрузка работ (несколько сразу)</h3>
+                        <!-- Атрибут multiple позволяет выбрать сразу пачку фотографий -->
+                        <input type="file" id="workFiles" accept="image/*" multiple>
+                        <button class="btn" onclick="addWorks()">Загрузить выбранные работы</button>
                     </div>
                     <div class="card">
-                        <h3>📌 Управление слотами и записями</h3>
+                        <h3>📌 Активные записи и слоты</h3>
                         <div id="manageSlotsContainer" style="font-size: 13px; color: var(--text-secondary);">
                             Загрузка...
                         </div>
@@ -422,56 +500,64 @@
             document.getElementById('studioTitle').innerText = appData.settings.studio_name.toUpperCase();
         }
 
+        // Слоты
         const slotsContainer = document.getElementById('slotsContainer');
         if (!appData.slots || appData.slots.length === 0) {
-            slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Нет свободных окошек</p>';
+            slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2; text-align: center; padding: 20px;">Нет свободных окошек</p>';
         } else {
             slotsContainer.innerHTML = appData.slots.map(s => `
                 <div class="slot-item ${s.is_booked ? 'booked' : ''}" ${!s.is_booked ? `onclick="selectSlot(${s.id}, '${s.date}', '${s.time}')"` : ''}>
-                    <strong>${s.date}</strong><br>
-                    <span>${s.time}</span><br>
-                    <small style="color: ${s.is_booked ? 'var(--accent)' : '#4cd137'}">${s.is_booked ? 'Занято' : 'Свободно'}</small>
+                    <div class="slot-date">${s.date}</div>
+                    <div class="slot-time">${s.time}</div>
+                    <div class="slot-status" style="color: ${s.is_booked ? 'var(--accent)' : 'var(--success)'}">${s.is_booked ? 'Занято' : 'Свободно'}</div>
                 </div>
             `).join('');
         }
 
+        // Работы (портфолио)
         const worksContainer = document.getElementById('worksContainer');
+        const isMaster = appData.master_ids && appData.master_ids.includes(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+        
         if (!appData.works || appData.works.length === 0) {
-            worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Портфолио пока пусто</p>';
+            worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2; text-align: center; padding: 20px;">Портфолио пока пусто</p>';
         } else {
             worksContainer.innerHTML = appData.works.map(w => `
                 <div class="work-card">
-                    <img src="${w.image_url || w.url}" alt="Work">
-                    ${appData.master_ids && appData.master_ids.includes(window.Telegram?.WebApp?.initDataUnsafe?.user?.id) ? `<button class="delete-btn" onclick="deleteWork(${w.id})">×</button>` : ''}
+                    <img src="${w.image_url || w.url}" alt="Work" loading="lazy">
+                    ${isMaster ? `<button class="delete-btn" onclick="deleteWork(${w.id})">×</button>` : ''}
                 </div>
             `).join('');
         }
 
+        // Отзывы
         const reviewsContainer = document.getElementById('reviewsContainer');
         if (!appData.reviews || appData.reviews.length === 0) {
-            reviewsContainer.innerHTML = '<p style="color: var(--text-secondary);">Пока нет отзывов</p>';
+            reviewsContainer.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">Пока нет отзывов</p>';
         } else {
             reviewsContainer.innerHTML = appData.reviews.map(r => `
                 <div class="review-card">
                     <strong>${r.author}</strong>
                     <p>${r.text}</p>
-                    ${r.photo_url || r.url ? `<img src="${r.photo_url || r.url}" style="margin-top:8px; border-radius:10px; width:100%; max-height:160px; object-fit:cover;">` : ''}
+                    ${r.photo_url || r.url ? `<img src="${r.photo_url || r.url}" style="margin-top:10px; border-radius:12px; width:100%; max-height:180px; object-fit:cover;">` : ''}
                 </div>
             `).join('');
         }
 
+        // Панель мастера (управление)
         const manageContainer = document.getElementById('manageSlotsContainer');
         if (manageContainer) {
             const bookedSlots = appData.slots.filter(s => s.is_booked);
             manageContainer.innerHTML = `
-                <p style="margin-bottom: 6px;"><b>Занятые записи:</b></p>
-                ${bookedSlots.length === 0 ? '<p style="margin-bottom: 10px; color: var(--text-secondary);">Нет записей</p>' : 
-                    bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
-                        📅 ${s.date} ${s.time}<br>👤 ${s.client_name} (@${s.client_tg})<br>📐 ${s.tattoo_size}
+                <p style="margin-bottom: 8px; color: #fff;"><b>Занятые записи клиентов:</b></p>
+                ${bookedSlots.length === 0 ? '<p style="margin-bottom: 14px; color: var(--text-secondary);">Нет активных записей</p>' : 
+                    bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--glass-border);">
+                        📅 <b>${s.date}</b> в ${s.time}<br>
+                        👤 ${s.client_name} (<a href="https://t.me/${s.client_tg.replace('@','')}" target="_blank" style="color:var(--accent)">@${s.client_tg.replace('@','')}</a>)<br>
+                        📐 ${s.tattoo_size}
                     </div>`).join('')}
-                <p style="margin-top: 10px; margin-bottom: 6px;"><b>Все слоты:</b></p>
+                <p style="margin-top: 14px; margin-bottom: 8px; color: #fff;"><b>Все слоты в системе:</b></p>
                 <div>
-                    ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 8px;"><span>${s.date} ${s.time}</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
+                    ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border);"><span>${s.date} ${s.time} (${s.is_booked ? 'Занято' : 'Свободно'})</span> <button style="background:var(--accent); color:#fff; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
                 </div>
             `;
         }
@@ -480,7 +566,7 @@
     function selectSlot(id, date, time) {
         selectedSlotId = id;
         document.getElementById('bookingFormCard').style.display = 'block';
-        document.getElementById('selectedSlotInfo').innerText = `Выбрано: ${date} в ${time}`;
+        document.getElementById('selectedSlotInfo').innerText = `Выбрано время: ${date} в ${time}`;
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
@@ -501,26 +587,36 @@
     }
 
     async function deleteSlot(id) {
-        if (!confirm('Удалить слот?')) return;
+        if (!confirm('Удалить этот слот?')) return;
         const res = await fetch(`/api/slots/${id}`, { method: 'DELETE' });
         if (res.ok) loadData();
     }
 
-    async function addWork() {
-        const fileInput = document.getElementById('workFile');
-        if (fileInput.files.length === 0) return;
+    // Функция множественной загрузки работ
+    async function addWorks() {
+        const fileInput = document.getElementById('workFiles');
+        if (fileInput.files.length === 0) {
+            alert('Выберите хотя бы одно изображение!');
+            return;
+        }
+        
         const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('files', fileInput.files[i]);
+        }
 
         const res = await fetch('/api/works', { method: 'POST', body: formData });
         if (res.ok) {
             fileInput.value = '';
             loadData();
+            alert('Работы успешно добавлены в портфолио!');
+        } else {
+            alert('Ошибка при загрузке работ');
         }
     }
 
     async function deleteWork(id) {
-        if (!confirm('Удалить работу из портфолио?')) return;
+        if (!confirm('Удалить эту работу из портфолио?')) return;
         const res = await fetch(`/api/works/${id}`, { method: 'DELETE' });
         if (res.ok) loadData();
     }
@@ -530,7 +626,11 @@
         const text = document.getElementById('reviewText').value;
         const photo = document.getElementById('reviewPhoto').files[0];
 
-        if (!author || !text) return;
+        if (!author || !text) {
+            alert('Заполните имя и текст отзыва!');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('author', author);
         formData.append('text', text);
@@ -552,7 +652,10 @@
         const tattooSize = document.getElementById('tattooSize').value;
         const photoFile = document.getElementById('tattooPhoto').files[0];
 
-        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) return;
+        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) {
+            alert('Пожалуйста, заполните все поля записи!');
+            return;
+        }
 
         const formData = new FormData();
         formData.append('slot_id', selectedSlotId);
@@ -570,6 +673,8 @@
             document.getElementById('tattooSize').value = '';
             document.getElementById('tattooPhoto').value = '';
             loadData();
+        } else {
+            alert('Ошибка при бронировании слота');
         }
     }
 

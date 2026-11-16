@@ -59,8 +59,6 @@ async def startup_event():
             webhook_url = f"{render_url}/webhook"
             await application.bot.set_webhook(url=webhook_url)
             logger.info(f"Webhook successfully set to {webhook_url}")
-        else:
-            logger.warning("RENDER_EXTERNAL_URL not set. Webhook could not be configured automatically.")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -145,25 +143,6 @@ async def get_settings():
     response = supabase.table("settings").select("*").execute()
     return {item["key"]: item["value"] for item in response.data}
 
-@app.post("/api/settings")
-async def update_setting(request: Request):
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase not configured")
-    try:
-        body = await request.json()
-        key = body.get("key")
-        value = body.get("value")
-    except Exception:
-        form = await request.form()
-        key = form.get("key")
-        value = form.get("value")
-
-    if not key:
-        raise HTTPException(status_code=400, detail="Key is required")
-
-    supabase.table("settings").upsert({"key": key, "value": value}).execute()
-    return {"status": "success"}
-
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -211,17 +190,20 @@ async def book_slot(
     photo_url = ""
     if tattoo_photo:
         file_bytes = await tattoo_photo.read()
-        file_name = f"{int(asyncio.get_event_loop().time())}_{tattoo_photo.filename}"
+        file_name = f"booking_{int(asyncio.get_event_loop().time())}_{tattoo_photo.filename}"
         supabase.storage.from_("uploads").upload(file_name, file_bytes)
         photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 
-    supabase.table("slots").update({
+    # Надежное обновление статуса слота в базе
+    update_res = supabase.table("slots").update({
         "is_booked": True,
         "client_name": client_name,
         "client_tg": client_tg,
         "tattoo_size": tattoo_size,
         "tattoo_photo": photo_url
     }).eq("id", slot_id).execute()
+
+    logger.info(f"Slot {slot_id} booked successfully: {update_res}")
 
     slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
     slot_data = slot_res.data[0] if slot_res.data else {}
@@ -255,20 +237,25 @@ async def get_works():
     response = supabase.table("works").select("*").order("id", desc=True).execute()
     return response.data
 
+# Поддержка МНОЖЕСТВЕННОЙ загрузки работ за один раз
 @app.post("/api/works")
-async def add_work(file: UploadFile = File(...)):
+async def add_works(files: list[UploadFile] = File(...)):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
     try:
-        file_bytes = await file.read()
-        file_name = f"work_{int(asyncio.get_event_loop().time())}_{file.filename}"
-        supabase.storage.from_("uploads").upload(file_name, file_bytes)
-        public_url = supabase.storage.from_("uploads").get_public_url(file_name)
-        
-        supabase.table("works").insert({"image_url": public_url, "url": public_url}).execute()
-        return {"status": "success", "url": public_url}
+        uploaded_urls = []
+        for file in files:
+            file_bytes = await file.read()
+            file_name = f"work_{int(asyncio.get_event_loop().time())}_{file.filename}"
+            supabase.storage.from_("uploads").upload(file_name, file_bytes)
+            public_url = supabase.storage.from_("uploads").get_public_url(file_name)
+            
+            supabase.table("works").insert({"image_url": public_url, "url": public_url}).execute()
+            uploaded_urls.append(public_url)
+            
+        return {"status": "success", "urls": uploaded_urls}
     except Exception as e:
-        logger.error(f"Error uploading work: {e}")
+        logger.error(f"Error uploading works: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/works/{work_id}")

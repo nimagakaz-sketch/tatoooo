@@ -87,30 +87,54 @@ async def read_root():
             return f.read()
     return "Tattoo Studio API is running!"
 
-# --- ЕДИНЫЙ ЭНДПОИНТ ДЛЯ ЗАГРУЗКИ ДАННЫХ ФРОНТЕНДОМ ---
+# --- ЕДИНЫЙ ЭНДПОИНТ С НОРМАЛИЗАЦИЕЙ ДАННЫХ ДЛЯ ФРОНТЕНДА ---
 @app.get("/api/data")
 async def get_all_data():
     if not supabase:
         return {"slots": [], "works": [], "reviews": [], "settings": {}}
     
     try:
-        slots = supabase.table("slots").select("*").order("id").execute().data or []
-        works = supabase.table("works").select("*").order("id", desc=True).execute().data or []
-        reviews = supabase.table("reviews").select("*").order("id", desc=True).execute().data or []
+        slots_res = supabase.table("slots").select("*").order("id").execute().data or []
+        works_res = supabase.table("works").select("*").order("id", desc=True).execute().data or []
+        reviews_res = supabase.table("reviews").select("*").order("id", desc=True).execute().data or []
         settings_res = supabase.table("settings").select("*").execute().data or []
-        settings = {item["key"]: item["value"] for item in settings_res}
+
+        # Нормализация портфолио (поддержка любых имен колонок в базе)
+        normalized_works = []
+        for w in works_res:
+            img = w.get("image_url") or w.get("url") or w.get("image") or ""
+            normalized_works.append({
+                "id": w.get("id"),
+                "image_url": img,
+                "url": img,
+                "title": w.get("title") or "Work"
+            })
+
+        # Нормализация отзывов
+        normalized_reviews = []
+        for r in reviews_res:
+            photo = r.get("photo_url") or r.get("url") or r.get("photo") or ""
+            normalized_reviews.append({
+                "id": r.get("id"),
+                "author": r.get("author") or "Клиент",
+                "text": r.get("text") or "",
+                "photo_url": photo,
+                "url": photo
+            })
+
+        settings = {item["key"]: item["value"] for item in settings_res if "key" in item and "value" in item}
         
         return {
-            "slots": slots,
-            "works": works,
-            "reviews": reviews,
+            "slots": slots_res,
+            "works": normalized_works,
+            "reviews": normalized_reviews,
             "settings": settings
         }
     except Exception as e:
-        logger.error(f"Error fetching all data: {e}")
+        logger.error(f"Error fetching normalized data: {e}")
         return {"slots": [], "works": [], "reviews": [], "settings": {}}
 
-# --- НАСТРОЙКИ (Универсальный прием: JSON или FormData) ---
+# --- НАСТРОЙКИ ---
 @app.get("/api/settings")
 async def get_settings():
     if not supabase:
@@ -137,7 +161,7 @@ async def update_setting(request: Request):
     supabase.table("settings").upsert({"key": key, "value": value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ (Универсальный прием: JSON или FormData) ---
+# --- СЛОТЫ ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -241,7 +265,7 @@ async def add_work(file: UploadFile = File(...)):
         supabase.storage.from_("uploads").upload(file_name, file_bytes)
         public_url = supabase.storage.from_("uploads").get_public_url(file_name)
         
-        supabase.table("works").insert({"image_url": public_url}).execute()
+        supabase.table("works").insert({"image_url": public_url, "url": public_url}).execute()
         return {"status": "success", "url": public_url}
     except Exception as e:
         logger.error(f"Error uploading work: {e}")

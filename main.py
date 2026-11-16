@@ -136,13 +136,6 @@ async def get_all_data():
         logger.error(f"Error fetching normalized data: {e}")
         return {"slots": [], "works": [], "reviews": [], "settings": {}, "master_ids": []}
 
-@app.get("/api/settings")
-async def get_settings():
-    if not supabase:
-        return {}
-    response = supabase.table("settings").select("*").execute()
-    return {item["key"]: item["value"] for item in response.data}
-
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -194,16 +187,13 @@ async def book_slot(
         supabase.storage.from_("uploads").upload(file_name, file_bytes)
         photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 
-    # Надежное обновление статуса слота в базе
-    update_res = supabase.table("slots").update({
+    supabase.table("slots").update({
         "is_booked": True,
         "client_name": client_name,
         "client_tg": client_tg,
         "tattoo_size": tattoo_size,
         "tattoo_photo": photo_url
     }).eq("id", slot_id).execute()
-
-    logger.info(f"Slot {slot_id} booked successfully: {update_res}")
 
     slot_res = supabase.table("slots").select("*").eq("id", slot_id).execute()
     slot_data = slot_res.data[0] if slot_res.data else {}
@@ -237,7 +227,6 @@ async def get_works():
     response = supabase.table("works").select("*").order("id", desc=True).execute()
     return response.data
 
-# Поддержка МНОЖЕСТВЕННОЙ загрузки работ за один раз
 @app.post("/api/works")
 async def add_works(files: list[UploadFile] = File(...)):
     if not supabase:
@@ -279,7 +268,7 @@ async def add_review(author: str = Form(...), text: str = Form(...), photo: Uplo
     photo_url = ""
     if photo:
         file_bytes = await photo.read()
-        file_name = f"review_{int(asyncio.get_event_loop().time())}_{photo.filename}"
+        file_name = f"review_{int(asyncio.get_event_loop().time())}_{tattoo_photo.filename}" if 'tattoo_photo' in locals() else f"review_{int(asyncio.get_event_loop().time())}.jpg"
         supabase.storage.from_("uploads").upload(file_name, file_bytes)
         photo_url = supabase.storage.from_("uploads").get_public_url(file_name)
 

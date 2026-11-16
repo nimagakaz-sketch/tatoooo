@@ -87,7 +87,30 @@ async def read_root():
             return f.read()
     return "Tattoo Studio API is running!"
 
-# --- НАСТРОЙКИ (Всеядный прием: JSON или FormData) ---
+# --- ЕДИНЫЙ ЭНДПОИНТ ДЛЯ ЗАГРУЗКИ ДАННЫХ ФРОНТЕНДОМ ---
+@app.get("/api/data")
+async def get_all_data():
+    if not supabase:
+        return {"slots": [], "works": [], "reviews": [], "settings": {}}
+    
+    try:
+        slots = supabase.table("slots").select("*").order("id").execute().data or []
+        works = supabase.table("works").select("*").order("id", desc=True).execute().data or []
+        reviews = supabase.table("reviews").select("*").order("id", desc=True).execute().data or []
+        settings_res = supabase.table("settings").select("*").execute().data or []
+        settings = {item["key"]: item["value"] for item in settings_res}
+        
+        return {
+            "slots": slots,
+            "works": works,
+            "reviews": reviews,
+            "settings": settings
+        }
+    except Exception as e:
+        logger.error(f"Error fetching all data: {e}")
+        return {"slots": [], "works": [], "reviews": [], "settings": {}}
+
+# --- НАСТРОЙКИ (Универсальный прием: JSON или FormData) ---
 @app.get("/api/settings")
 async def get_settings():
     if not supabase:
@@ -114,7 +137,7 @@ async def update_setting(request: Request):
     supabase.table("settings").upsert({"key": key, "value": value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ (Всеядный прием: JSON или FormData) ---
+# --- СЛОТЫ (Универсальный прием: JSON или FormData) ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:

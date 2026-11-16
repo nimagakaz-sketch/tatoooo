@@ -41,7 +41,6 @@
             max-width: 480px;
         }
 
-        /* Шапка */
         .header {
             text-align: center;
             margin-bottom: 20px;
@@ -62,7 +61,6 @@
             color: var(--text-secondary);
         }
 
-        /* Жидкий стеклянный таббар (3 вкладки) */
         .tabs {
             display: flex;
             background: var(--glass-bg);
@@ -107,7 +105,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Карточки Liquid Glass */
         .card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -124,12 +121,8 @@
             font-weight: 700;
             margin-bottom: 14px;
             color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        /* Формы */
         input, select, textarea {
             width: 100%;
             background: rgba(0, 0, 0, 0.35);
@@ -158,14 +151,13 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 6px 20px var(--accent-glow);
-            transition: transform 0.2s, opacity 0.2s;
+            transition: transform 0.2s;
         }
 
         button.btn:active {
             transform: scale(0.97);
         }
 
-        /* Сетка слотов */
         .slots-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -193,7 +185,6 @@
             background: rgba(255, 255, 255, 0.01);
         }
 
-        /* Сетка портфолио */
         .works-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -232,7 +223,6 @@
             justify-content: center;
         }
 
-        /* Отзывы */
         .review-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--glass-border);
@@ -283,14 +273,12 @@
         <div class="subtitle">пространство художественной татуировки</div>
     </div>
 
-    <!-- Таббар с 3 вкладками -->
-    <div class="tabs">
+    <div class="tabs" id="tabsContainer">
         <div class="tab active" onclick="switchTab('booking')">📅 Запись</div>
         <div class="tab" onclick="switchTab('works')">🖤 Работы</div>
         <div class="tab" onclick="switchTab('reviews')">💬 Отзывы</div>
     </div>
 
-    <!-- ВКЛАДКА 1: ЗАПИСЬ -->
     <div id="booking-section" class="section active">
         <div class="card">
             <h3>Свободные окошки</h3>
@@ -309,30 +297,8 @@
             <input type="file" id="tattooPhoto" accept="image/*">
             <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
         </div>
-
-        <!-- Панель добавления слотов для мастера -->
-        <div class="card">
-            <h3>➕ Добавить окошко (Мастер)</h3>
-            <input type="date" id="newSlotDate">
-            <div class="quick-time">
-                <div class="time-chip" onclick="setTime('11:00')">11:00</div>
-                <div class="time-chip" onclick="setTime('14:00')">14:00</div>
-                <div class="time-chip" onclick="setTime('17:00')">17:00</div>
-                <div class="time-chip" onclick="setTime('20:00')">20:00</div>
-            </div>
-            <input type="time" id="newSlotTime" value="12:30">
-            <button class="btn" onclick="addSlot()">Опубликовать слот</button>
-        </div>
-
-        <div class="card">
-            <h3>📌 Управление слотами и записями</h3>
-            <div id="manageSlotsContainer" style="font-size: 13px; color: var(--text-secondary);">
-                Загрузка...
-            </div>
-        </div>
     </div>
 
-    <!-- ВКЛАДКА 2: РАБОТЫ -->
     <div id="works-section" class="section">
         <div class="card">
             <h3>Портфолио</h3>
@@ -340,15 +306,8 @@
                 <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
             </div>
         </div>
-
-        <div class="card">
-            <h3>🖼 Загрузить работу (Мастер)</h3>
-            <input type="file" id="workFile" accept="image/*">
-            <button class="btn" onclick="addWork()">Загрузить в портфолио</button>
-        </div>
     </div>
 
-    <!-- ВКЛАДКА 3: ОТЗЫВЫ -->
     <div id="reviews-section" class="section">
         <div class="card">
             <h3>Что говорят клиенты</h3>
@@ -368,7 +327,7 @@
 </div>
 
 <script>
-    let appData = { slots: [], works: [], reviews: [], settings: {} };
+    let appData = { slots: [], works: [], reviews: [], settings: {}, master_ids: [] };
     let selectedSlotId = null;
 
     if (window.Telegram && window.Telegram.WebApp) {
@@ -388,6 +347,11 @@
         } else if (tabName === 'reviews') {
             document.querySelectorAll('.tab')[2].classList.add('active');
             document.getElementById('reviews-section').classList.add('active');
+        } else if (tabName === 'master') {
+            const masterTab = document.getElementById('masterTab');
+            if (masterTab) masterTab.classList.add('active');
+            const masterSec = document.getElementById('master-section');
+            if (masterSec) masterSec.classList.add('active');
         }
     }
 
@@ -399,9 +363,57 @@
         try {
             const res = await fetch('/api/data');
             appData = await res.json();
+            checkAndRenderMasterPanel();
             renderUI();
         } catch (e) {
             console.error('Ошибка загрузки данных:', e);
+        }
+    }
+
+    function checkAndRenderMasterPanel() {
+        const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+        const isMaster = appData.master_ids && appData.master_ids.includes(userId);
+
+        const tabsContainer = document.getElementById('tabsContainer');
+        let masterTab = document.getElementById('masterTab');
+        let masterSection = document.getElementById('master-section');
+
+        if (isMaster) {
+            if (!masterTab) {
+                tabsContainer.innerHTML += `<div class="tab" id="masterTab" onclick="switchTab('master')">⚙️ Мастер</div>`;
+            }
+            if (!masterSection) {
+                const container = document.querySelector('.container');
+                const sectionDiv = document.createElement('div');
+                sectionDiv.id = 'master-section';
+                sectionDiv.className = 'section';
+                sectionDiv.innerHTML = `
+                    <div class="card">
+                        <h3>➕ Добавить свободный сеанс</h3>
+                        <input type="date" id="newSlotDate">
+                        <div class="quick-time">
+                            <div class="time-chip" onclick="setTime('11:00')">11:00</div>
+                            <div class="time-chip" onclick="setTime('14:00')">14:00</div>
+                            <div class="time-chip" onclick="setTime('17:00')">17:00</div>
+                            <div class="time-chip" onclick="setTime('20:00')">20:00</div>
+                        </div>
+                        <input type="time" id="newSlotTime" value="12:30">
+                        <button class="btn" onclick="addSlot()">Опубликовать слот</button>
+                    </div>
+                    <div class="card">
+                        <h3>🖼 Загрузить работу в портфолио</h3>
+                        <input type="file" id="workFile" accept="image/*">
+                        <button class="btn" onclick="addWork()">Загрузить работу</button>
+                    </div>
+                    <div class="card">
+                        <h3>📌 Управление слотами и записями</h3>
+                        <div id="manageSlotsContainer" style="font-size: 13px; color: var(--text-secondary);">
+                            Загрузка...
+                        </div>
+                    </div>
+                `;
+                container.appendChild(sectionDiv);
+            }
         }
     }
 
@@ -410,7 +422,6 @@
             document.getElementById('studioTitle').innerText = appData.settings.studio_name.toUpperCase();
         }
 
-        // Слоты
         const slotsContainer = document.getElementById('slotsContainer');
         if (!appData.slots || appData.slots.length === 0) {
             slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Нет свободных окошек</p>';
@@ -424,7 +435,6 @@
             `).join('');
         }
 
-        // Работы
         const worksContainer = document.getElementById('worksContainer');
         if (!appData.works || appData.works.length === 0) {
             worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Портфолио пока пусто</p>';
@@ -432,12 +442,11 @@
             worksContainer.innerHTML = appData.works.map(w => `
                 <div class="work-card">
                     <img src="${w.image_url || w.url}" alt="Work">
-                    <button class="delete-btn" onclick="deleteWork(${w.id})">×</button>
+                    ${appData.master_ids && appData.master_ids.includes(window.Telegram?.WebApp?.initDataUnsafe?.user?.id) ? `<button class="delete-btn" onclick="deleteWork(${w.id})">×</button>` : ''}
                 </div>
             `).join('');
         }
 
-        // Отзывы
         const reviewsContainer = document.getElementById('reviewsContainer');
         if (!appData.reviews || appData.reviews.length === 0) {
             reviewsContainer.innerHTML = '<p style="color: var(--text-secondary);">Пока нет отзывов</p>';
@@ -451,20 +460,21 @@
             `).join('');
         }
 
-        // Управление мастером
         const manageContainer = document.getElementById('manageSlotsContainer');
-        const bookedSlots = appData.slots.filter(s => s.is_booked);
-        manageContainer.innerHTML = `
-            <p style="margin-bottom: 6px;"><b>Занятые записи:</b></p>
-            ${bookedSlots.length === 0 ? '<p style="margin-bottom: 10px; color: var(--text-secondary);">Нет записей</p>' : 
-                bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
-                    📅 ${s.date} ${s.time}<br>👤 ${s.client_name} (@${s.client_tg})<br>📐 ${s.tattoo_size}
-                </div>`).join('')}
-            <p style="margin-top: 10px; margin-bottom: 6px;"><b>Все слоты:</b></p>
-            <div>
-                ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 8px;"><span>${s.date} ${s.time}</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
-            </div>
-        `;
+        if (manageContainer) {
+            const bookedSlots = appData.slots.filter(s => s.is_booked);
+            manageContainer.innerHTML = `
+                <p style="margin-bottom: 6px;"><b>Занятые записи:</b></p>
+                ${bookedSlots.length === 0 ? '<p style="margin-bottom: 10px; color: var(--text-secondary);">Нет записей</p>' : 
+                    bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
+                        📅 ${s.date} ${s.time}<br>👤 ${s.client_name} (@${s.client_tg})<br>📐 ${s.tattoo_size}
+                    </div>`).join('')}
+                <p style="margin-top: 10px; margin-bottom: 6px;"><b>Все слоты:</b></p>
+                <div>
+                    ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 8px;"><span>${s.date} ${s.time}</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
+                </div>
+            `;
+        }
     }
 
     function selectSlot(id, date, time) {
@@ -510,7 +520,7 @@
     }
 
     async function deleteWork(id) {
-        if (!confirm('Удалить работу?')) return;
+        if (!confirm('Удалить работу из портфолио?')) return;
         const res = await fetch(`/api/works/${id}`, { method: 'DELETE' });
         if (res.ok) loadData();
     }

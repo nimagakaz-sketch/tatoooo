@@ -11,7 +11,6 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Переменные окружения
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -33,7 +32,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Инициализация Telegram приложения через Webhook
 application = None
 if BOT_TOKEN:
     application = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -79,7 +77,6 @@ async def telegram_webhook(request: Request):
     await application.process_update(update)
     return {"status": "ok"}
 
-# Главная страница
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     if os.path.exists("index.html"):
@@ -87,11 +84,10 @@ async def read_root():
             return f.read()
     return "Tattoo Studio API is running!"
 
-# --- ЕДИНЫЙ ЭНДПОИНТ С НОРМАЛИЗАЦИЕЙ ДАННЫХ ДЛЯ ФРОНТЕНДА ---
 @app.get("/api/data")
 async def get_all_data():
     if not supabase:
-        return {"slots": [], "works": [], "reviews": [], "settings": {}}
+        return {"slots": [], "works": [], "reviews": [], "settings": {}, "master_ids": []}
     
     try:
         slots_res = supabase.table("slots").select("*").order("id").execute().data or []
@@ -99,7 +95,6 @@ async def get_all_data():
         reviews_res = supabase.table("reviews").select("*").order("id", desc=True).execute().data or []
         settings_res = supabase.table("settings").select("*").execute().data or []
 
-        # Нормализация портфолио (поддержка любых имен колонок в базе)
         normalized_works = []
         for w in works_res:
             img = w.get("image_url") or w.get("url") or w.get("image") or ""
@@ -110,7 +105,6 @@ async def get_all_data():
                 "title": w.get("title") or "Work"
             })
 
-        # Нормализация отзывов
         normalized_reviews = []
         for r in reviews_res:
             photo = r.get("photo_url") or r.get("url") or r.get("photo") or ""
@@ -124,17 +118,26 @@ async def get_all_data():
 
         settings = {item["key"]: item["value"] for item in settings_res if "key" in item and "value" in item}
         
+        raw_masters = [MASTER_CHAT_ID, SECOND_MASTER_CHAT_ID]
+        master_ids = []
+        for m in raw_masters:
+            if m:
+                try:
+                    master_ids.append(int(m))
+                except ValueError:
+                    pass
+
         return {
             "slots": slots_res,
             "works": normalized_works,
             "reviews": normalized_reviews,
-            "settings": settings
+            "settings": settings,
+            "master_ids": master_ids
         }
     except Exception as e:
         logger.error(f"Error fetching normalized data: {e}")
-        return {"slots": [], "works": [], "reviews": [], "settings": {}}
+        return {"slots": [], "works": [], "reviews": [], "settings": {}, "master_ids": []}
 
-# --- НАСТРОЙКИ ---
 @app.get("/api/settings")
 async def get_settings():
     if not supabase:
@@ -161,7 +164,6 @@ async def update_setting(request: Request):
     supabase.table("settings").upsert({"key": key, "value": value}).execute()
     return {"status": "success"}
 
-# --- СЛОТЫ ---
 @app.get("/api/slots")
 async def get_slots():
     if not supabase:
@@ -195,7 +197,6 @@ async def delete_slot(slot_id: int):
     supabase.table("slots").delete().eq("id", slot_id).execute()
     return {"status": "success"}
 
-# --- БРОНИРОВАНИЕ И УВЕДОМЛЕНИЯ МАСТЕРУ ---
 @app.post("/api/book")
 async def book_slot(
     slot_id: int = Form(...),
@@ -247,7 +248,6 @@ async def book_slot(
 
     return {"status": "success"}
 
-# --- ПОРТФОЛИО ---
 @app.get("/api/works")
 async def get_works():
     if not supabase:
@@ -278,7 +278,6 @@ async def delete_work(work_id: int):
     supabase.table("works").delete().eq("id", work_id).execute()
     return {"status": "success"}
 
-# --- ОТЗЫВЫ ---
 @app.get("/api/reviews")
 async def get_reviews():
     if not supabase:

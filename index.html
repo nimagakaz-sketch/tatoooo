@@ -43,49 +43,9 @@
             font-weight: 700;
             margin-bottom: 20px;
             letter-spacing: 1px;
-            background: linear-gradient(135deg, #fff, #a0a0ab);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Навигация по вкладкам */
-        .tabs {
-            display: flex;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 14px;
-            padding: 4px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(12px);
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .tab.active {
-            background: var(--accent);
             color: #fff;
-            box-shadow: 0 4px 15px rgba(255, 51, 75, 0.4);
         }
 
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* Карточки в стиле Liquid Glass */
         .card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -93,7 +53,6 @@
             padding: 16px;
             margin-bottom: 14px;
             backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .card h3 {
@@ -102,7 +61,6 @@
             color: var(--text-main);
         }
 
-        /* Поля ввода и кнопки */
         input, select, textarea {
             width: 100%;
             background: rgba(0, 0, 0, 0.3);
@@ -129,15 +87,9 @@
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
             box-shadow: 0 4px 15px rgba(255, 51, 75, 0.3);
         }
 
-        button.btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Сетка слотов и портфолио */
         .slots-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -151,17 +103,11 @@
             padding: 12px;
             text-align: center;
             cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .slot-item:hover {
-            border-color: var(--accent);
         }
 
         .slot-item.booked {
             opacity: 0.5;
             cursor: not-allowed;
-            background: rgba(255, 255, 255, 0.02);
         }
 
         .works-grid {
@@ -196,9 +142,6 @@
             height: 28px;
             font-weight: bold;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .quick-time {
@@ -216,9 +159,6 @@
             font-size: 13px;
             cursor: pointer;
         }
-        .time-chip:hover {
-            background: var(--accent);
-        }
     </style>
 </head>
 <body>
@@ -226,81 +166,57 @@
 <div class="container">
     <h1 id="studioTitle">LIIZZYTATTT</h1>
 
-    <!-- Меню вкладок -->
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('booking')">Запись</div>
-        <div class="tab" onclick="switchTab('works')">Работы</div>
-        <div class="tab" onclick="switchTab('reviews')">Отзывы</div>
-        <div class="tab" onclick="switchTab('master')">Мастер</div>
-    </div>
-
-    <!-- Вкладка: Запись -->
-    <div id="booking-section" class="section active">
-        <div class="card">
-            <h3>📅 Свободные окошки</h3>
-            <div id="slotsContainer" class="slots-grid">
-                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка слотов...</p>
-            </div>
-        </div>
-
-        <div class="card" id="bookingFormCard" style="display: none;">
-            <h3>✍️ Записаться на сеанс</h3>
-            <p id="selectedSlotInfo" style="margin-bottom: 10px; font-size: 14px; color: var(--accent);"></p>
-            <input type="text" id="clientName" placeholder="Ваше имя">
-            <input type="text" id="clientTg" placeholder="Ваш Telegram (@username)">
-            <input type="text" id="tattooSize" placeholder="Размер и место (например, 10x15 на предплечье)">
-            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Эскиз или референс (необязательно):</label>
-            <input type="file" id="tattooPhoto" accept="image/*">
-            <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
+    <!-- Блок: Свободные окошки для записи -->
+    <div class="card">
+        <h3>📅 Свободные окошки</h3>
+        <div id="slotsContainer" class="slots-grid">
+            <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка слотов...</p>
         </div>
     </div>
 
-    <!-- Вкладка: Работы -->
-    <div id="works-section" class="section">
-        <div class="card">
-            <h3>🖤 Портфолио</h3>
-            <div id="worksContainer" class="works-grid">
-                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
-            </div>
+    <!-- Форма бронирования (появляется при клике на слот) -->
+    <div class="card" id="bookingFormCard" style="display: none;">
+        <h3>✍️ Записаться на сеанс</h3>
+        <p id="selectedSlotInfo" style="margin-bottom: 10px; font-size: 14px; color: var(--accent);"></p>
+        <input type="text" id="clientName" placeholder="Ваше имя">
+        <input type="text" id="clientTg" placeholder="Ваш Telegram (@username)">
+        <input type="text" id="tattooSize" placeholder="Размер и место">
+        <input type="file" id="tattooPhoto" accept="image/*">
+        <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
+    </div>
+
+    <!-- Блок: Портфолио -->
+    <div class="card">
+        <h3>🖤 Портфолио</h3>
+        <div id="worksContainer" class="works-grid">
+            <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
         </div>
     </div>
 
-    <!-- Вкладка: Отзывы -->
-    <div id="reviews-section" class="section">
-        <div class="card">
-            <h3>💬 Отзывы клиентов</h3>
-            <div id="reviewsContainer">
-                <p style="color: var(--text-secondary);">Загрузка отзывов...</p>
-            </div>
+    <!-- Блок: Панель мастера (добавление слотов и работ) -->
+    <div class="card">
+        <h3>➕ Добавить свободный сеанс</h3>
+        <input type="date" id="newSlotDate">
+        <div class="quick-time">
+            <div class="time-chip" onclick="setTime('11:00')">11:00</div>
+            <div class="time-chip" onclick="setTime('14:00')">14:00</div>
+            <div class="time-chip" onclick="setTime('17:00')">17:00</div>
+            <div class="time-chip" onclick="setTime('20:00')">20:00</div>
         </div>
+        <input type="time" id="newSlotTime" value="12:30">
+        <button class="btn" onclick="addSlot()">Добавить слот</button>
     </div>
 
-    <!-- Вкладка: Панель мастера -->
-    <div id="master-section" class="section">
-        <div class="card">
-            <h3>➕ Добавить свободный сеанс</h3>
-            <input type="date" id="newSlotDate">
-            <div class="quick-time">
-                <div class="time-chip" onclick="setTime('11:00')">11:00</div>
-                <div class="time-chip" onclick="setTime('14:00')">14:00</div>
-                <div class="time-chip" onclick="setTime('17:00')">17:00</div>
-                <div class="time-chip" onclick="setTime('20:00')">20:00</div>
-            </div>
-            <input type="time" id="newSlotTime" value="12:30">
-            <button class="btn" onclick="addSlot()">Добавить слот</button>
-        </div>
+    <div class="card">
+        <h3>🖼 Загрузить работу в портфолио</h3>
+        <input type="file" id="workFile" accept="image/*">
+        <button class="btn" onclick="addWork()">Загрузить работу</button>
+    </div>
 
-        <div class="card">
-            <h3>🖼 Загрузить работу в портфолио</h3>
-            <input type="file" id="workFile" accept="image/*">
-            <button class="btn" onclick="addWork()">Загрузить работу</button>
-        </div>
-
-        <div class="card">
-            <h3>⚙️ Управление слотами и работами</h3>
-            <div id="manageContainer" style="font-size: 13px; color: var(--text-secondary);">
-                Выберите слот или работу выше для удаления.
-            </div>
+    <div class="card">
+        <h3>📌 Активные заявки и управление</h3>
+        <div id="manageContainer" style="font-size: 13px; color: var(--text-secondary);">
+            Загрузка данных...
         </div>
     </div>
 </div>
@@ -311,25 +227,6 @@
 
     if (window.Telegram && window.Telegram.WebApp) {
         window.Telegram.WebApp.expand();
-    }
-
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        
-        if (tabName === 'booking') {
-            document.querySelectorAll('.tab')[0].classList.add('active');
-            document.getElementById('booking-section').classList.add('active');
-        } else if (tabName === 'works') {
-            document.querySelectorAll('.tab')[1].classList.add('active');
-            document.getElementById('works-section').classList.add('active');
-        } else if (tabName === 'reviews') {
-            document.querySelectorAll('.tab')[2].classList.add('active');
-            document.getElementById('reviews-section').classList.add('active');
-        } else if (tabName === 'master') {
-            document.querySelectorAll('.tab')[3].classList.add('active');
-            document.getElementById('master-section').classList.add('active');
-        }
     }
 
     function setTime(t) {
@@ -347,12 +244,10 @@
     }
 
     function renderUI() {
-        // Название студии
         if (appData.settings && appData.settings.studio_name) {
             document.getElementById('studioTitle').innerText = appData.settings.studio_name.toUpperCase();
         }
 
-        // Слоты
         const slotsContainer = document.getElementById('slotsContainer');
         if (!appData.slots || appData.slots.length === 0) {
             slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Нет свободных окошек</p>';
@@ -366,7 +261,6 @@
             `).join('');
         }
 
-        // Работы
         const worksContainer = document.getElementById('worksContainer');
         if (!appData.works || appData.works.length === 0) {
             worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Портфолио пока пусто</p>';
@@ -379,13 +273,20 @@
             `).join('');
         }
 
-        // Управление в панели мастера
         const manageContainer = document.getElementById('manageContainer');
+        const bookedSlots = appData.slots.filter(s => s.is_booked);
+        
         manageContainer.innerHTML = `
-            <p>Активных слотов: <b>${appData.slots.length}</b></p>
-            <p>Загруженных работ: <b>${appData.works.length}</b></p>
-            <div style="margin-top: 10px;">
-                ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 8px;"><span>${s.date} ${s.time}</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
+            <p style="margin-bottom: 8px;"><b>Занятые записи клиентов:</b></p>
+            ${bookedSlots.length === 0 ? '<p style="margin-bottom: 12px; color: var(--text-secondary);">Нет активных записей</p>' : 
+                bookedSlots.map(s => `<div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; margin-bottom: 6px;">
+                    📅 ${s.date} ${s.time}<br>
+                    👤 ${s.client_name || 'Клиент'} (@${s.client_tg || 'нет'})<br>
+                    📐 ${s.tattoo_size || 'Не указано'}
+                </div>`).join('')}
+            <p style="margin-top: 12px; margin-bottom: 8px;"><b>Все слоты:</b></p>
+            <div>
+                ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 8px;"><span>${s.date} ${s.time} (${s.is_booked ? 'Занято' : 'Свободно'})</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
             </div>
         `;
     }
@@ -400,60 +301,42 @@
     async function addSlot() {
         const date = document.getElementById('newSlotDate').value;
         const time = document.getElementById('newSlotTime').value;
-        if (!date || !time) {
-            alert('Выберите дату и время!');
-            return;
-        }
+        if (!date || !time) return;
+        
         const res = await fetch('/api/slots', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, time })
         });
         if (res.ok) {
-            alert('Слот успешно добавлен!');
             document.getElementById('newSlotDate').value = '';
-            loadData(); // Автоматическое обновление интерфейса
-        } else {
-            alert('Ошибка при добавлении слота');
+            loadData();
         }
     }
 
     async function deleteSlot(id) {
         if (!confirm('Удалить этот слот?')) return;
         const res = await fetch(`/api/slots/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            loadData();
-        }
+        if (res.ok) loadData();
     }
 
     async function addWork() {
         const fileInput = document.getElementById('workFile');
-        if (fileInput.files.length === 0) {
-            alert('Выберите файл изображения!');
-            return;
-        }
+        if (fileInput.files.length === 0) return;
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
 
-        const res = await fetch('/api/works', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch('/api/works', { method: 'POST', body: formData });
         if (res.ok) {
-            alert('Работа успешно загружена!');
             fileInput.value = '';
-            loadData(); // Автоматическое обновление интерфейса
-        } else {
-            alert('Ошибка загрузки работы');
+            loadData();
         }
     }
 
     async function deleteWork(id) {
-        if (!confirm('Удалить эту работу из портфолио?')) return;
+        if (!confirm('Удалить работу?')) return;
         const res = await fetch(`/api/works/${id}`, { method: 'DELETE' });
-        if (res.ok) {
-            loadData();
-        }
+        if (res.ok) loadData();
     }
 
     async function submitBooking() {
@@ -462,39 +345,26 @@
         const tattooSize = document.getElementById('tattooSize').value;
         const photoFile = document.getElementById('tattooPhoto').files[0];
 
-        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) {
-            alert('Пожалуйста, заполните все поля!');
-            return;
-        }
+        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) return;
 
         const formData = new FormData();
         formData.append('slot_id', selectedSlotId);
         formData.append('client_name', clientName);
         formData.append('client_tg', clientTg);
         formData.append('tattoo_size', tattooSize);
-        if (photoFile) {
-            formData.append('tattoo_photo', photoFile);
-        }
+        if (photoFile) formData.append('tattoo_photo', photoFile);
 
-        const res = await fetch('/api/book', {
-            method: 'POST',
-            body: formData
-        });
-
+        const res = await fetch('/api/book', { method: 'POST', body: formData });
         if (res.ok) {
-            alert('Запись успешно создана! Мастер получил уведомление.');
             document.getElementById('bookingFormCard').style.display = 'none';
             document.getElementById('clientName').value = '';
             document.getElementById('clientTg').value = '';
             document.getElementById('tattooSize').value = '';
             document.getElementById('tattooPhoto').value = '';
-            loadData(); // Автоматическое обновление интерфейса
-        } else {
-            alert('Ошибка при бронировании');
+            loadData();
         }
     }
 
-    // Инициализация при загрузке
     loadData();
 </script>
 

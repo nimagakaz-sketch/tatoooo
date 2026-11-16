@@ -2,847 +2,501 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title id="pageTitle">Tattoo Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIIZZYTATTT • Запись на сеанс</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #08080a;
-            --text-color: #f5f5f7;
-            --hint-color: #8e8e93;
-            --accent-red: #ff2a36;
-            --accent-gradient: linear-gradient(135deg, #ff2a36 0%, #b31217 100%);
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-card-bg: rgba(18, 18, 24, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-border-highlight: rgba(255, 255, 255, 0.18);
-            --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            --bg-color: #0f0f11;
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --accent: #ff334b;
+            --text-main: #ffffff;
+            --text-secondary: #a0a0ab;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
         body {
             background-color: var(--bg-color);
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: var(--text-color);
+            color: var(--text-main);
             padding: 16px;
             min-height: 100vh;
-            overflow-x: hidden;
-            transition: background-image 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .container { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 50px; position: relative; z-index: 2; }
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
 
-        .header { text-align: center; margin-bottom: 24px; padding-top: 10px; }
-        .header h1 { font-size: 24px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 25px rgba(255, 42, 54, 0.6); }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #fff, #a0a0ab);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
+        /* Навигация по вкладкам */
         .tabs {
             display: flex;
-            background: rgba(15, 15, 22, 0.75);
-            backdrop-filter: blur(35px);
-            -webkit-backdrop-filter: blur(35px);
-            border-radius: 18px;
-            padding: 6px;
-            margin-bottom: 20px;
-            border: 1px solid var(--glass-border-highlight);
-            box-shadow: var(--glass-shadow);
-        }
-
-        .tab-btn {
-            flex: 1; padding: 12px; text-align: center; background: transparent;
-            border: none; color: var(--hint-color); font-size: 12px; font-weight: 700;
-            border-radius: 14px; cursor: pointer; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .tab-btn:hover { color: #fff; }
-        .tab-btn.active {
-            background: var(--accent-gradient); color: #fff;
-            box-shadow: 0 8px 25px rgba(255, 42, 54, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-            transform: scale(1.02);
-        }
-
-        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
-        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
-
-        .glass-card {
-            background: var(--glass-card-bg);
-            backdrop-filter: blur(35px);
-            -webkit-backdrop-filter: blur(35px);
+            background: var(--glass-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 22px; padding: 22px;
-            box-shadow: var(--glass-shadow); margin-bottom: 16px;
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(12px);
         }
 
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 11px; font-weight: 700; color: var(--hint-color); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        input, textarea, select {
-            width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.45);
-            border: 1px solid var(--glass-border); border-radius: 14px; color: var(--text-color);
-            font-size: 15px; outline: none; transition: all 0.3s;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--accent-red);
-            box-shadow: 0 0 0 4px rgba(255, 42, 54, 0.25), inset 0 2px 4px rgba(0,0,0,0.5);
-        }
-        select option { background: #121216; color: #fff; }
 
-        .preview-container { margin-top: 8px; text-align: center; display: none; }
-        .preview-container img { max-width: 100%; height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid var(--glass-border-highlight); }
-
-        .admin-booking-card {
-            background: rgba(0,0,0,0.45); border: 1px solid var(--glass-border);
-            border-radius: 14px; padding: 12px; margin-bottom: 10px; font-size: 12px;
+        .tab.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 51, 75, 0.4);
         }
-        .admin-booking-header { display: flex; justify-content: space-between; font-weight: bold; color: var(--accent-red); margin-bottom: 4px; }
-        .admin-booking-details { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
-        .admin-booking-details img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; cursor: pointer; }
-        
-        .admin-btns-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-        
-        .action-btn, .delete-slot-btn {
-            background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(10px);
-            color: #fff; border: 1px solid var(--glass-border);
-            padding: 7px 12px; border-radius: 10px; cursor: pointer;
-            font-size: 11px; font-weight: 600; text-decoration: none; display: inline-block;
-            transition: all 0.25s ease;
-        }
-        .action-btn:hover, .delete-slot-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: var(--glass-border-highlight); }
-        .cancel-btn { background: rgba(255, 42, 54, 0.15); color: #ff2a36; border-color: rgba(255, 42, 54, 0.3); }
-        .cancel-btn:hover { background: #ff2a36; color: #fff; }
 
-        .file-upload-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 14px; background: rgba(255, 255, 255, 0.03);
-            border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 14px;
-            color: var(--text-color); font-size: 14px; cursor: pointer; transition: all 0.3s;
+        .section {
+            display: none;
         }
-        .file-upload-btn:hover { background: rgba(255, 255, 255, 0.07); border-color: var(--accent-red); }
-        input[type="file"] { display: none; }
-        .file-name { font-size: 12px; color: var(--hint-color); margin-top: 6px; text-align: center; }
 
-        .submit-btn {
-            width: 100%; padding: 16px; background: var(--accent-gradient);
-            color: #fff; border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
-            cursor: pointer; box-shadow: 0 8px 25px rgba(255, 42, 54, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-            text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;
+        .section.active {
+            display: block;
         }
-        .submit-btn:active { transform: scale(0.98); }
 
-        .grid-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .gallery-item { border-radius: 14px; overflow: hidden; height: 160px; background: #15151a; border: 1px solid var(--glass-border); cursor: pointer; position: relative; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-        .gallery-item:hover img { transform: scale(1.05); }
-        
-        .review-card { background: rgba(0,0,0,0.4); padding: 14px; border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--glass-border); }
-        .review-author { font-weight: 700; font-size: 13px; color: var(--accent-red); margin-bottom: 4px; }
-        .review-text { font-size: 13px; color: #ddd; margin-bottom: 8px; }
-        .review-img { width: 100%; height: 140px; border-radius: 12px; object-fit: cover; margin-top: 6px; border: 1px solid var(--glass-border); cursor: pointer; }
-
-        .admin-trigger-btn {
-            display: none; width: 100%; margin-top: 30px; padding: 12px;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
-            border-radius: 14px; color: var(--hint-color); font-size: 12px; font-weight: 600;
-            cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px;
-            backdrop-filter: blur(10px);
+        /* Карточки в стиле Liquid Glass */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        .admin-trigger-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
 
-        .share-btn {
-            display: block; width: 100%; margin-top: 10px; padding: 12px;
-            background: rgba(40, 160, 255, 0.12); border: 1px solid rgba(40, 160, 255, 0.3);
-            border-radius: 14px; color: #5ac8fa; font-size: 12px; font-weight: 600;
-            cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 1px;
-            backdrop-filter: blur(10px); transition: all 0.3s ease;
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text-main);
         }
-        .share-btn:hover { background: rgba(40, 160, 255, 0.22); }
 
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            z-index: 1000; justify-content: center; align-items: center; padding: 16px;
+        /* Поля ввода и кнопки */
+        input, select, textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 12px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 10px;
+            outline: none;
         }
-        .modal.open { display: flex; }
-        .modal-card {
-            background: rgba(18, 18, 26, 0.85); backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px); border: 1px solid var(--glass-border-highlight);
-            border-radius: 24px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; padding: 24px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.15);
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-title { font-size: 14px; font-weight: 700; color: var(--accent-red); text-transform: uppercase; letter-spacing: 0.5px; }
-        .close-modal { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; }
 
-        .zoom-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.92); z-index: 2000; justify-content: center; align-items: center; padding: 12px;
+        input:focus {
+            border-color: var(--accent);
         }
-        .zoom-modal.open { display: flex; }
-        .zoom-modal img { max-width: 100%; max-height: 90vh; border-radius: 12px; object-fit: contain; }
 
-        /* Canvas для снега */
-        #snowCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
+        button.btn {
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 51, 75, 0.3);
+        }
+
+        button.btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Сетка слотов и портфолио */
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .slot-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .slot-item:hover {
+            border-color: var(--accent);
+        }
+
+        .slot-item.booked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .works-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .work-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .work-card img {
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            z-index: 1;
+            object-fit: cover;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ff334b;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-time {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .time-chip {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .time-chip:hover {
+            background: var(--accent);
         }
     </style>
 </head>
 <body>
-    <canvas id="snowCanvas"></canvas>
 
-    <div class="container">
-        <div class="header">
-            <h1 id="studioTitleHeader">Tattoo Studio</h1>
-        </div>
+<div class="container">
+    <h1 id="studioTitle">LIIZZYTATTT</h1>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('booking', this)">Запись</button>
-            <button class="tab-btn" onclick="switchTab('works', this)">Работы</button>
-            <button class="tab-btn" onclick="switchTab('reviews', this)">Отзывы</button>
-        </div>
-
-        <!-- ВКЛАДКА 1: ЗАПИСЬ -->
-        <div id="booking" class="tab-content active">
-            <div class="glass-card">
-                <form id="bookingForm" onsubmit="submitForm(event)">
-                    <div class="form-group">
-                        <label>Ваше имя</label>
-                        <input type="text" name="client_name" placeholder="Как к вам обращаться?" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>1. Выберите дату сеанса</label>
-                        <select id="dateSelect" onchange="onDateSelected(this.value)" required>
-                            <option value="" disabled selected>-- Выберите свободную дату --</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="timeSection" style="display: none;">
-                        <label>2. Выберите время сеанса</label>
-                        <select id="timeSelect" onchange="onTimeSelected(this.value)" required>
-                            <option value="" disabled selected>-- Выберите время --</option>
-                        </select>
-                    </div>
-
-                    <input type="hidden" name="slot_id" id="selectedSlotId" required>
-
-                    <div class="form-group">
-                        <label>Размер и место татуировки</label>
-                        <input type="text" name="tattoo_size" placeholder="Например: 15х10 см, предплечье" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Эскиз или референс</label>
-                        <label class="file-upload-btn">
-                            📁 Выбрать фото эскиза
-                            <input type="file" name="tattoo_photo" accept="image/*" required onchange="previewSketch(this)">
-                        </label>
-                        <div class="file-name" id="fileName">Файл не выбран</div>
-                        <div class="preview-container" id="previewContainer">
-                            <img id="sketchPreview" src="" alt="Preview" onclick="openZoom(this.src)">
-                        </div>
-                    </div>
-                    <input type="hidden" name="telegram_id" id="telegram_id">
-                    <button type="submit" class="submit-btn">Забронировать сеанс</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 2: РАБОТЫ -->
-        <div id="works" class="tab-content">
-            <div class="glass-card">
-                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">Портфолио</h3>
-                <div class="grid-gallery" id="worksContainer"></div>
-            </div>
-        </div>
-
-        <!-- ВКЛАДКА 3: ОТЗЫВЫ -->
-        <div id="reviews" class="tab-content">
-            <div class="glass-card">
-                <h3 style="font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">Отзывы клиентов</h3>
-                <div id="reviewsContainer"></div>
-
-                <div style="margin-top: 20px; border-top: 1px dashed var(--glass-border); padding-top: 15px;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--accent-red); margin-bottom: 10px; text-transform: uppercase;">Оставить свой отзыв</div>
-                    <input type="text" id="clientReviewAuthor" placeholder="Ваше имя" style="margin-bottom: 8px;">
-                    <textarea id="clientReviewText" placeholder="Ваш отзыв..." rows="2" style="margin-bottom: 8px;"></textarea>
-                    <label class="file-upload-btn" style="margin-bottom: 8px; padding: 10px; font-size: 12px;">
-                        📸 Прикрепить фото работы
-                        <input type="file" id="clientReviewPhoto" accept="image/*" onchange="document.getElementById('reviewFileName').textContent = this.files[0] ? this.files[0].name : 'Фото не выбрано'">
-                    </label>
-                    <div class="file-name" id="reviewFileName" style="margin-bottom: 8px;">Фото не выбрано</div>
-                    <button type="button" class="submit-btn" style="padding: 12px; font-size: 13px;" onclick="submitClientReview()">Отправить отзыв</button>
-                </div>
-            </div>
-        </div>
-
-        <button class="admin-trigger-btn" id="adminTriggerBtn" onclick="openAdminModal()">⚙️ Панель мастера</button>
-        <button class="share-btn" onclick="shareApp()">🔗 Поделиться студией</button>
+    <!-- Меню вкладок -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('booking')">Запись</div>
+        <div class="tab" onclick="switchTab('works')">Работы</div>
+        <div class="tab" onclick="switchTab('reviews')">Отзывы</div>
+        <div class="tab" onclick="switchTab('master')">Мастер</div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО ПАНЕЛИ МАСТЕРА -->
-    <div class="modal" id="adminModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-title">Панель управления мастера</div>
-                <button class="close-modal" onclick="closeAdminModal()">✕</button>
+    <!-- Вкладка: Запись -->
+    <div id="booking-section" class="section active">
+        <div class="card">
+            <h3>📅 Свободные окошки</h3>
+            <div id="slotsContainer" class="slots-grid">
+                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка слотов...</p>
             </div>
+        </div>
 
-            <!-- Управление эффектом снега -->
-            <div class="form-group">
-                <label>Эффект падающего снега</label>
-                <button type="button" class="submit-btn" id="snowToggleBtn" style="padding: 12px; font-size: 13px; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);" onclick="toggleSnow()">❄️ Выключить снег</button>
-            </div>
+        <div class="card" id="bookingFormCard" style="display: none;">
+            <h3>✍️ Записаться на сеанс</h3>
+            <p id="selectedSlotInfo" style="margin-bottom: 10px; font-size: 14px; color: var(--accent);"></p>
+            <input type="text" id="clientName" placeholder="Ваше имя">
+            <input type="text" id="clientTg" placeholder="Ваш Telegram (@username)">
+            <input type="text" id="tattooSize" placeholder="Размер и место (например, 10x15 на предплечье)">
+            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Эскиз или референс (необязательно):</label>
+            <input type="file" id="tattooPhoto" accept="image/*">
+            <button class="btn" onclick="submitBooking()">Подтвердить запись</button>
+        </div>
+    </div>
 
-            <div class="form-group">
-                <label>Название студии</label>
-                <input type="text" id="settingStudioName" placeholder="Tattoo Studio">
-            </div>
-            <div class="form-group">
-                <label>Ссылка на фоновое изображение</label>
-                <input type="text" id="settingBgUrl" placeholder="https://...">
-            </div>
-            <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="saveSettings()">Сохранить настройки</button>
-
-            <div class="form-group">
-                <label>Активные заявки клиентов</label>
-                <div id="adminBookingsList" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
-            </div>
-
-            <div class="form-group">
-                <label>Добавить свободный сеанс</label>
-                <input type="date" id="newSlotDate" style="margin-bottom: 8px;">
-                
-                <div style="font-size: 10px; color: var(--hint-color); margin-bottom: 4px; text-transform: uppercase;">Быстрое добавление времени:</div>
-                <div class="admin-btns-row" style="margin-bottom: 8px;">
-                    <button type="button" class="action-btn" onclick="quickAddSlot('11:00')">⚡ 11:00</button>
-                    <button type="button" class="action-btn" onclick="quickAddSlot('14:00')">⚡ 14:00</button>
-                    <button type="button" class="action-btn" onclick="quickAddSlot('17:00')">⚡ 17:00</button>
-                    <button type="button" class="action-btn" onclick="quickAddSlot('20:00')">⚡ 20:00</button>
-                </div>
-
-                <div style="display: flex; gap: 8px;">
-                    <input type="time" id="newSlotTime" style="flex: 1; margin-bottom: 8px;">
-                    <button type="button" class="submit-btn" style="flex: 1; padding: 10px; font-size: 12px; margin-bottom: 12px;" onclick="addSlot()">Добавить</button>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Управление всеми слотами</label>
-                <div id="adminSlotsList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
-            </div>
-
-            <div class="form-group">
-                <label>Загрузить работы в портфолио (можно несколько)</label>
-                <label class="file-upload-btn" style="margin-bottom: 8px; font-size: 12px;">
-                    📁 Выбрать фото работ
-                    <input type="file" id="adminWorkFiles" accept="image/*" multiple onchange="document.getElementById('worksCountText').textContent = this.files.length ? `Выбрано файлов: ${this.files.length}` : 'Файлы не выбраны'">
-                </label>
-                <div class="file-name" id="worksCountText" style="margin-bottom: 8px;">Файлы не выбраны</div>
-                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px; margin-bottom: 20px;" onclick="uploadWorks()">Загрузить в портфолио</button>
-            </div>
-
-            <div class="form-group">
-                <label>Удаление работ из портфолио</label>
-                <div id="adminWorksList" style="max-height: 150px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;"></div>
-            </div>
-
-            <div class="form-group">
-                <label>Добавить отзыв (от мастера)</label>
-                <input type="text" id="adminReviewAuthor" placeholder="Имя клиента" style="margin-bottom: 8px;">
-                <textarea id="adminReviewText" placeholder="Текст отзыва..." rows="2" style="margin-bottom: 8px;"></textarea>
-                <button type="button" class="submit-btn" style="padding: 10px; font-size: 12px;" onclick="adminAddReview()">Опубликовать отзыв</button>
+    <!-- Вкладка: Работы -->
+    <div id="works-section" class="section">
+        <div class="card">
+            <h3>🖤 Портфолио</h3>
+            <div id="worksContainer" class="works-grid">
+                <p style="color: var(--text-secondary); grid-column: span 2;">Загрузка работ...</p>
             </div>
         </div>
     </div>
 
-    <div class="zoom-modal" id="zoomModal" onclick="closeZoom()">
-        <img id="zoomImage" src="" alt="Zoomed Photo">
+    <!-- Вкладка: Отзывы -->
+    <div id="reviews-section" class="section">
+        <div class="card">
+            <h3>💬 Отзывы клиентов</h3>
+            <div id="reviewsContainer">
+                <p style="color: var(--text-secondary);">Загрузка отзывов...</p>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    <!-- Вкладка: Панель мастера -->
+    <div id="master-section" class="section">
+        <div class="card">
+            <h3>➕ Добавить свободный сеанс</h3>
+            <input type="date" id="newSlotDate">
+            <div class="quick-time">
+                <div class="time-chip" onclick="setTime('11:00')">11:00</div>
+                <div class="time-chip" onclick="setTime('14:00')">14:00</div>
+                <div class="time-chip" onclick="setTime('17:00')">17:00</div>
+                <div class="time-chip" onclick="setTime('20:00')">20:00</div>
+            </div>
+            <input type="time" id="newSlotTime" value="12:30">
+            <button class="btn" onclick="addSlot()">Добавить слот</button>
+        </div>
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('newSlotDate').min = todayStr;
-        document.getElementById('newSlotDate').value = todayStr;
+        <div class="card">
+            <h3>🖼 Загрузить работу в портфолио</h3>
+            <input type="file" id="workFile" accept="image/*">
+            <button class="btn" onclick="addWork()">Загрузить работу</button>
+        </div>
+
+        <div class="card">
+            <h3>⚙️ Управление слотами и работами</h3>
+            <div id="manageContainer" style="font-size: 13px; color: var(--text-secondary);">
+                Выберите слот или работу выше для удаления.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let appData = { slots: [], works: [], reviews: [], settings: {} };
+    let selectedSlotId = null;
+
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.expand();
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         
-        const admins = ['youngyannniii', 'liizzytatt'];
-
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('telegram_id').value = user.username ? `@${user.username}` : `${user.first_name} (ID: ${user.id})`;
-            
-            if (user.username && admins.includes(user.username.toLowerCase())) {
-                document.getElementById('adminTriggerBtn').style.display = 'block';
-            }
-        } else {
-            document.getElementById('adminTriggerBtn').style.display = 'block';
-            document.getElementById('telegram_id').value = "@youngyannniii";
+        if (tabName === 'booking') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('booking-section').classList.add('active');
+        } else if (tabName === 'works') {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('works-section').classList.add('active');
+        } else if (tabName === 'reviews') {
+            document.querySelectorAll('.tab')[2].classList.add('active');
+            document.getElementById('reviews-section').classList.add('active');
+        } else if (tabName === 'master') {
+            document.querySelectorAll('.tab')[3].classList.add('active');
+            document.getElementById('master-section').classList.add('active');
         }
+    }
 
-        // --- ЛОГИКА СНЕГА ---
-        let snowEnabled = true;
-        const canvas = document.getElementById('snowCanvas');
-        const ctx = canvas.getContext('2d');
-        let snowflakes = [];
-        let animationId = null;
+    function setTime(t) {
+        document.getElementById('newSlotTime').value = t;
+    }
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function initSnowflakes() {
-            snowflakes = [];
-            const count = 45;
-            for (let i = 0; i < count; i++) {
-                snowflakes.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: Math.random() * 3 + 1,
-                    speed: Math.random() * 1.2 + 0.5,
-                    wind: Math.random() * 0.6 - 0.3,
-                    opacity: Math.random() * 0.7 + 0.3
-                });
-            }
-        }
-
-        function drawSnow() {
-            if (!snowEnabled) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            snowflakes.forEach(f => {
-                ctx.beginPath();
-                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${f.opacity})`;
-                ctx.fill();
-
-                f.y += f.speed;
-                f.x += f.wind;
-
-                if (f.y > canvas.height) {
-                    f.y = 0;
-                    f.x = Math.random() * canvas.width;
-                }
-                if (f.x > canvas.width || f.x < 0) {
-                    f.x = Math.random() * canvas.width;
-                }
-            });
-
-            animationId = requestAnimationFrame(drawSnow);
-        }
-
-        function startSnow() {
-            snowEnabled = true;
-            canvas.style.display = 'block';
-            initSnowflakes();
-            cancelAnimationFrame(animationId);
-            drawSnow();
-            document.getElementById('snowToggleBtn').textContent = '❄️ Выключить снег';
-            document.getElementById('snowToggleBtn').style.background = 'rgba(255,255,255,0.06)';
-        }
-
-        function stopSnow() {
-            snowEnabled = false;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.style.display = 'none';
-            cancelAnimationFrame(animationId);
-            document.getElementById('snowToggleBtn').textContent = '❄️ Включить снег';
-            document.getElementById('snowToggleBtn').style.background = 'rgba(255, 42, 54, 0.2)';
-        }
-
-        async function toggleSnow() {
-            const newState = snowEnabled ? 'false' : 'true';
-            const formData = new FormData();
-            formData.append('enabled', newState);
-            
-            await fetch('/api/admin/toggle_snow', { method: 'POST', body: formData });
-            if (newState === 'true') {
-                startSnow();
-            } else {
-                stopSnow();
-            }
-        }
-        // ---------------------
-
-        function switchTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
-        }
-
-        function openAdminModal() { document.getElementById('adminModal').classList.add('open'); }
-        function closeAdminModal() { document.getElementById('adminModal').classList.remove('open'); }
-
-        function openZoom(url) {
-            document.getElementById('zoomImage').src = url;
-            document.getElementById('zoomModal').classList.add('open');
-        }
-        function closeZoom() {
-            document.getElementById('zoomModal').classList.remove('open');
-        }
-
-        function previewSketch(input) {
-            const file = input.files[0];
-            if (file) {
-                document.getElementById('fileName').textContent = file.name;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('sketchPreview').src = e.target.result;
-                    document.getElementById('previewContainer').style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function shareApp() {
-            const appUrl = "https://tatoooo.onrender.com";
-            navigator.clipboard.writeText(appUrl).then(() => {
-                alert("Ссылка на студию скопирована в буфер обмена!");
-            });
-        }
-
-        function copyReminder(clientName, date, time, size) {
-            const reminderText = `Привет, ${clientName}! 👋 Напоминаем про твою запись на сеанс в тату-студию на ${date} в ${time}.\n\n🔹 Эскиз/размер: ${size}\n\nЖдем тебя! Если планы поменялись, пожалуйста, предупреди заранее. 🖤`;
-            navigator.clipboard.writeText(reminderText).then(() => {
-                alert("Текст напоминания скопирован в буфер обмена!");
-            });
-        }
-
-        let globalSlots = [];
-        let selectedDate = null;
-
-        async function loadData() {
+    async function loadData() {
+        try {
             const res = await fetch('/api/data');
-            const data = await res.json();
+            appData = await res.json();
+            renderUI();
+        } catch (e) {
+            console.error('Ошибка загрузки данных:', e);
+        }
+    }
 
-            if(data.settings) {
-                const sName = data.settings.studio_name || "Tattoo Studio";
-                const bgUrl = data.settings.bg_url || "";
-                document.getElementById('studioTitleHeader').textContent = sName;
-                document.getElementById('pageTitle').textContent = sName;
-                document.getElementById('settingStudioName').value = sName;
-                document.getElementById('settingBgUrl').value = bgUrl;
-                if(bgUrl) {
-                    document.body.style.backgroundImage = `linear-gradient(rgba(8, 8, 10, 0.85), rgba(8, 8, 10, 0.85)), url('${bgUrl}')`;
-                }
-
-                // Синхронизация статуса снега из базы
-                if (data.settings.snow_enabled === 'false') {
-                    stopSnow();
-                } else {
-                    startSnow();
-                }
-            }
-
-            globalSlots = data.slots;
-            renderDateDropdown();
-
-            const adminSlotsList = document.getElementById('adminSlotsList');
-            adminSlotsList.innerHTML = '';
-
-            const adminBookingsList = document.getElementById('adminBookingsList');
-            adminBookingsList.innerHTML = '';
-
-            const adminWorksList = document.getElementById('adminWorksList');
-            adminWorksList.innerHTML = '';
-
-            data.slots.forEach(slot => {
-                const adminRow = document.createElement('div');
-                adminRow.className = 'admin-slot-row';
-                adminRow.innerHTML = `
-                    <span>${slot.date} ${slot.time} ${slot.is_booked ? '(Занят)' : ''}</span>
-                    <button class="delete-slot-btn" onclick="deleteSlot(${slot.id})">Удалить</button>
-                `;
-                adminSlotsList.appendChild(adminRow);
-
-                if (slot.is_booked) {
-                    let tgLink = "#";
-                    if (slot.client_tg && slot.client_tg.startsWith('@')) {
-                        tgLink = `https://t.me/${slot.client_tg.substring(1)}`;
-                    }
-
-                    const bookingCard = document.createElement('div');
-                    bookingCard.className = 'admin-booking-card';
-                    bookingCard.innerHTML = `
-                        <div class="admin-booking-header">📅 ${slot.date} в ${slot.time}</div>
-                        <div><b>Клиент:</b> ${slot.client_name} (${slot.client_tg})</div>
-                        <div><b>Размер:</b> ${slot.tattoo_size}</div>
-                        <div class="admin-booking-details">
-                            ${slot.tattoo_photo ? `<img src="${slot.tattoo_photo}" alt="Sketch" onclick="openZoom('${slot.tattoo_photo}')">` : ''}
-                            <div style="flex: 1;">
-                                <div class="admin-btns-row">
-                                    ${slot.client_tg && slot.client_tg.startsWith('@') ? `<a href="${tgLink}" target="_blank" class="action-btn">💬 Написать</a>` : ''}
-                                    <button class="action-btn" onclick="copyReminder('${slot.client_name}', '${slot.date}', '${slot.time}', '${slot.tattoo_size}')">📋 Напоминание</button>
-                                </div>
-                                <button class="action-btn cancel-btn" onclick="cancelBooking(${slot.id})">Освободить слот</button>
-                            </div>
-                        </div>
-                    `;
-                    adminBookingsList.appendChild(bookingCard);
-                }
-            });
-
-            if (adminBookingsList.innerHTML === '') {
-                adminBookingsList.innerHTML = '<div style="color: var(--hint-color); font-size: 11px;">Нет активных записей</div>';
-            }
-
-            const worksContainer = document.getElementById('worksContainer');
-            worksContainer.innerHTML = '';
-            data.works.forEach(work => {
-                const div = document.createElement('div');
-                div.className = 'gallery-item';
-                div.innerHTML = `<img src="${work.url}" alt="Work" onclick="openZoom('${work.url}')">`;
-                worksContainer.appendChild(div);
-
-                const adminWorkRow = document.createElement('div');
-                adminWorkRow.className = 'admin-slot-row';
-                adminWorkRow.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <img src="${work.url}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover;" onclick="openZoom('${work.url}')">
-                        <span style="font-size: 11px; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">ID: ${work.id}</span>
-                    </div>
-                    <button class="delete-slot-btn" onclick="deleteWork(${work.id})">Удалить</button>
-                `;
-                adminWorksList.appendChild(adminWorkRow);
-            });
-
-            if (data.works.length === 0) {
-                adminWorksList.innerHTML = '<div style="color: var(--hint-color); font-size: 11px;">Портфолио пусто</div>';
-            }
-
-            const reviewsContainer = document.getElementById('reviewsContainer');
-            reviewsContainer.innerHTML = '';
-            data.reviews.forEach(rev => {
-                const div = document.createElement('div');
-                div.className = 'review-card';
-                let photoHtml = rev.photo_url ? `<img src="${rev.photo_url}" class="review-img" alt="Review Photo" onclick="openZoom('${rev.photo_url}')">` : '';
-                div.innerHTML = `<div class="review-author">${rev.author}</div><div class="review-text">${rev.text}</div>${photoHtml}`;
-                reviewsContainer.appendChild(div);
-            });
+    function renderUI() {
+        // Название студии
+        if (appData.settings && appData.settings.studio_name) {
+            document.getElementById('studioTitle').innerText = appData.settings.studio_name.toUpperCase();
         }
 
-        function renderDateDropdown() {
-            const dateSelect = document.getElementById('dateSelect');
-            const currentSelected = selectedDate;
-            dateSelect.innerHTML = '<option value="" disabled selected>-- Выберите свободную дату --</option>';
-
-            const unbookedSlots = globalSlots.filter(s => !s.is_booked);
-            const uniqueDates = [...new Set(unbookedSlots.map(s => s.date))].sort();
-
-            if (uniqueDates.length === 0) {
-                dateSelect.innerHTML = '<option value="" disabled selected>Нет свободных дат</option>';
-                document.getElementById('timeSection').style.display = 'none';
-                return;
-            }
-
-            uniqueDates.forEach(date => {
-                const opt = document.createElement('option');
-                opt.value = date;
-                opt.textContent = date;
-                if (date === currentSelected) opt.selected = true;
-                dateSelect.appendChild(opt);
-            });
-
-            if (currentSelected && uniqueDates.includes(currentSelected)) {
-                renderTimeDropdown(currentSelected);
-            } else {
-                selectedDate = null;
-                document.getElementById('timeSection').style.display = 'none';
-            }
+        // Слоты
+        const slotsContainer = document.getElementById('slotsContainer');
+        if (!appData.slots || appData.slots.length === 0) {
+            slotsContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Нет свободных окошек</p>';
+        } else {
+            slotsContainer.innerHTML = appData.slots.map(s => `
+                <div class="slot-item ${s.is_booked ? 'booked' : ''}" ${!s.is_booked ? `onclick="selectSlot(${s.id}, '${s.date}', '${s.time}')"` : ''}>
+                    <strong>${s.date}</strong><br>
+                    <span>${s.time}</span><br>
+                    <small style="color: ${s.is_booked ? 'var(--accent)' : '#4cd137'}">${s.is_booked ? 'Занято' : 'Свободно'}</small>
+                </div>
+            `).join('');
         }
 
-        function onDateSelected(date) {
-            selectedDate = date;
-            document.getElementById('selectedSlotId').value = '';
-            renderTimeDropdown(date);
+        // Работы
+        const worksContainer = document.getElementById('worksContainer');
+        if (!appData.works || appData.works.length === 0) {
+            worksContainer.innerHTML = '<p style="color: var(--text-secondary); grid-column: span 2;">Портфолио пока пусто</p>';
+        } else {
+            worksContainer.innerHTML = appData.works.map(w => `
+                <div class="work-card">
+                    <img src="${w.image_url || w.url}" alt="Work">
+                    <button class="delete-btn" onclick="deleteWork(${w.id})">×</button>
+                </div>
+            `).join('');
         }
 
-        function renderTimeDropdown(date) {
-            const timeSection = document.getElementById('timeSection');
-            const timeSelect = document.getElementById('timeSelect');
-            timeSelect.innerHTML = '<option value="" disabled selected>-- Выберите время --</option>';
+        // Управление в панели мастера
+        const manageContainer = document.getElementById('manageContainer');
+        manageContainer.innerHTML = `
+            <p>Активных слотов: <b>${appData.slots.length}</b></p>
+            <p>Загруженных работ: <b>${appData.works.length}</b></p>
+            <div style="margin-top: 10px;">
+                ${appData.slots.map(s => `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 8px;"><span>${s.date} ${s.time}</span> <button style="background:var(--accent); color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="deleteSlot(${s.id})">Удалить</button></div>`).join('')}
+            </div>
+        `;
+    }
 
-            const slotsForDate = globalSlots.filter(s => s.date === date && !s.is_booked);
+    function selectSlot(id, date, time) {
+        selectedSlotId = id;
+        document.getElementById('bookingFormCard').style.display = 'block';
+        document.getElementById('selectedSlotInfo').innerText = `Выбрано время: ${date} в ${time}`;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
 
-            if (slotsForDate.length === 0) {
-                timeSection.style.display = 'none';
-                return;
-            }
-
-            timeSection.style.display = 'block';
-
-            slotsForDate.forEach(slot => {
-                const opt = document.createElement('option');
-                opt.value = slot.id;
-                opt.textContent = slot.time;
-                timeSelect.appendChild(opt);
-            });
+    async function addSlot() {
+        const date = document.getElementById('newSlotDate').value;
+        const time = document.getElementById('newSlotTime').value;
+        if (!date || !time) {
+            alert('Выберите дату и время!');
+            return;
         }
-
-        function onTimeSelected(slotId) {
-            document.getElementById('selectedSlotId').value = slotId;
+        const res = await fetch('/api/slots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, time })
+        });
+        if (res.ok) {
+            alert('Слот успешно добавлен!');
+            document.getElementById('newSlotDate').value = '';
+            loadData(); // Автоматическое обновление интерфейса
+        } else {
+            alert('Ошибка при добавлении слота');
         }
+    }
 
-        async function saveSettings() {
-            const studio_name = document.getElementById('settingStudioName').value;
-            const bg_url = document.getElementById('settingBgUrl').value;
-            
-            const formData = new FormData();
-            formData.append('studio_name', studio_name);
-            formData.append('bg_url', bg_url);
-
-            await fetch('/api/admin/update_settings', { method: 'POST', body: formData });
-            loadData();
-            alert("Настройки успешно обновлены!");
-        }
-
-        async function submitForm(event) {
-            event.preventDefault();
-            const form = document.getElementById('bookingForm');
-            const formData = new FormData(form);
-
-            const slotId = document.getElementById('selectedSlotId').value;
-            if (!slotId) {
-                alert("Пожалуйста, выберите дату и время сеанса!");
-                return;
-            }
-
-            const response = await fetch('/submit', { method: 'POST', body: formData });
-            if (response.ok) {
-                alert("Заявка успешно отправлена! Мастер скоро свяжется с вами.");
-                window.location.reload();
-            } else {
-                const err = await response.json();
-                alert("Ошибка: " + (err.detail || "Не удалось отправить заявку"));
-            }
-        }
-
-        async function addSlot() {
-            const date = document.getElementById('newSlotDate').value;
-            const time = document.getElementById('newSlotTime').value;
-            if(!date || !time) return alert("Выберите дату и время!");
-            
-            const formData = new FormData();
-            formData.append('date', date);
-            formData.append('time', time);
-
-            await fetch('/api/admin/add_slot', { method: 'POST', body: formData });
-            loadData();
-            alert("Слот успешно добавлен в расписание!");
-        }
-
-        async function quickAddSlot(timeStr) {
-            const date = document.getElementById('newSlotDate').value;
-            if(!date) return alert("Сначала выберите дату в календаре выше!");
-            
-            const formData = new FormData();
-            formData.append('date', date);
-            formData.append('time', timeStr);
-
-            await fetch('/api/admin/add_slot', { method: 'POST', body: formData });
-            loadData();
-            alert(`Слот на ${date} (${timeStr}) успешно добавлен!`);
-        }
-
-        async function deleteSlot(slotId) {
-            if(!confirm("Удалить этот слот из расписания?")) return;
-            const formData = new FormData();
-            formData.append('slot_id', slotId);
-            await fetch('/api/admin/delete_slot', { method: 'POST', body: formData });
+    async function deleteSlot(id) {
+        if (!confirm('Удалить этот слот?')) return;
+        const res = await fetch(`/api/slots/${id}`, { method: 'DELETE' });
+        if (res.ok) {
             loadData();
         }
+    }
 
-        async function cancelBooking(slotId) {
-            if(!confirm("Отменить эту запись и освободить слот?")) return;
-            const formData = new FormData();
-            formData.append('slot_id', slotId);
-            await fetch('/api/admin/cancel_booking', { method: 'POST', body: formData });
+    async function addWork() {
+        const fileInput = document.getElementById('workFile');
+        if (fileInput.files.length === 0) {
+            alert('Выберите файл изображения!');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        const res = await fetch('/api/works', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            alert('Работа успешно загружена!');
+            fileInput.value = '';
+            loadData(); // Автоматическое обновление интерфейса
+        } else {
+            alert('Ошибка загрузки работы');
+        }
+    }
+
+    async function deleteWork(id) {
+        if (!confirm('Удалить эту работу из портфолио?')) return;
+        const res = await fetch(`/api/works/${id}`, { method: 'DELETE' });
+        if (res.ok) {
             loadData();
         }
+    }
 
-        async function uploadWorks() {
-            const fileInput = document.getElementById('adminWorkFiles');
-            if(!fileInput.files || fileInput.files.length === 0) return alert("Выберите файлы!");
+    async function submitBooking() {
+        const clientName = document.getElementById('clientName').value;
+        const clientTg = document.getElementById('clientTg').value;
+        const tattooSize = document.getElementById('tattooSize').value;
+        const photoFile = document.getElementById('tattooPhoto').files[0];
 
-            const formData = new FormData();
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('files', fileInput.files[i]);
-            }
-
-            const response = await fetch('/api/admin/add_work', { method: 'POST', body: formData });
-            if (response.ok) {
-                fileInput.value = '';
-                document.getElementById('worksCountText').textContent = 'Файлы не выбраны';
-                loadData();
-                alert("Работы успешно загружены в портфолио!");
-            } else {
-                alert("Ошибка при загрузке работ.");
-            }
+        if (!clientName || !clientTg || !tattooSize || !selectedSlotId) {
+            alert('Пожалуйста, заполните все поля!');
+            return;
         }
 
-        async function deleteWork(workId) {
-            if(!confirm("Удалить эту работу из портфолио?")) return;
-            const formData = new FormData();
-            formData.append('work_id', workId);
-            await fetch('/api/admin/delete_work', { method: 'POST', body: formData });
-            loadData();
+        const formData = new FormData();
+        formData.append('slot_id', selectedSlotId);
+        formData.append('client_name', clientName);
+        formData.append('client_tg', clientTg);
+        formData.append('tattoo_size', tattooSize);
+        if (photoFile) {
+            formData.append('tattoo_photo', photoFile);
         }
 
-        async function submitClientReview() {
-            const author = document.getElementById('clientReviewAuthor').value;
-            const text = document.getElementById('clientReviewText').value;
-            const photoInput = document.getElementById('clientReviewRow') || document.getElementById('clientReviewPhoto');
+        const res = await fetch('/api/book', {
+            method: 'POST',
+            body: formData
+        });
 
-            if(!author || !text) return alert("Заполните ваше имя и текст отзыва!");
-
-            const formData = new FormData();
-            formData.append('author', author);
-            formData.append('text', text);
-            if(photoInput && photoInput.files[0]) {
-                formData.append('photo', photoInput.files[0]);
-            }
-
-            await fetch('/api/add_review', { method: 'POST', body: formData });
-            document.getElementById('clientReviewAuthor').value = '';
-            document.getElementById('clientReviewText').value = '';
-            if(photoInput) photoInput.value = '';
-            document.getElementById('reviewFileName').textContent = 'Фото не выбрано';
-            loadData();
-            alert("Спасибо! Ваш отзыв опубликован.");
+        if (res.ok) {
+            alert('Запись успешно создана! Мастер получил уведомление.');
+            document.getElementById('bookingFormCard').style.display = 'none';
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientTg').value = '';
+            document.getElementById('tattooSize').value = '';
+            document.getElementById('tattooPhoto').value = '';
+            loadData(); // Автоматическое обновление интерфейса
+        } else {
+            alert('Ошибка при бронировании');
         }
+    }
 
-        async function adminAddReview() {
-            const author = document.getElementById('adminReviewAuthor').value;
-            const text = document.getElementById('adminReviewText').value;
+    // Инициализация при загрузке
+    loadData();
+</script>
 
-            if(!author || !text) return alert("Заполните поля отзыва!");
-
-            const formData = new FormData();
-            formData.append('author', author);
-            formData.append('text', text);
-
-            await fetch('/api/add_review', { method: 'POST', body: formData });
-            document.getElementById('adminReviewAuthor').value = '';
-            document.getElementById('adminReviewText').value = '';
-            loadData();
-            alert("Отзыв успешно добавлен!");
-        }
-
-        loadData();
-    </script>
 </body>
 </html>
